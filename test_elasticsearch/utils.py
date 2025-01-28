@@ -26,11 +26,10 @@ from elasticsearch import (
     ConnectionError,
     Elasticsearch,
     NotFoundError,
-    RequestError,
 )
 
 SOURCE_DIR = Path(__file__).absolute().parent.parent
-CA_CERTS = str(SOURCE_DIR / ".ci/certs/ca.crt")
+CA_CERTS = str(SOURCE_DIR / ".buildkite/certs/ca.crt")
 
 
 def es_url() -> str:
@@ -149,6 +148,9 @@ def wipe_cluster(client):
         wipe_tasks(client)
         wipe_node_shutdown_metadata(client)
         wait_for_pending_datafeeds_and_jobs(client)
+        wipe_calendars(client)
+        wipe_filters(client)
+        wipe_transforms(client)
 
     wait_for_cluster_state_updates_to_finish(client)
     if close_after_wipe:
@@ -212,10 +214,13 @@ def wipe_data_streams(client):
 
 
 def wipe_indices(client):
-    client.options(ignore_status=404).indices.delete(
-        index="*,-.ds-ilm-history-*",
-        expand_wildcards="all",
-    )
+    indices = client.cat.indices().strip().splitlines()
+    if len(indices) > 0:
+        index_names = [i.split(" ")[2] for i in indices]
+        client.options(ignore_status=404).indices.delete(
+            index=",".join(index_names),
+            expand_wildcards="all",
+        )
 
 
 def wipe_searchable_snapshot_indices(client):
@@ -229,6 +234,7 @@ def wipe_searchable_snapshot_indices(client):
 
 
 def wipe_xpack_templates(client):
+    # Delete index templates (including legacy)
     templates = [
         x.strip() for x in client.cat.templates(h="name").split("\n") if x.strip()
     ]
@@ -241,26 +247,15 @@ def wipe_xpack_templates(client):
             if f"index_template [{template}] missing" in str(e):
                 client.indices.delete_index_template(name=template)
 
-    # Delete component templates, need to retry because sometimes
-    # indices aren't cleaned up in time before we issue the delete.
+    # Delete component templates
     templates = client.cluster.get_component_template()["component_templates"]
     templates_to_delete = [
-        template for template in templates if not is_xpack_template(template["name"])
+        template["name"]
+        for template in templates
+        if not is_xpack_template(template["name"])
     ]
-    for _ in range(3):
-        for template in list(templates_to_delete):
-            try:
-                client.cluster.delete_component_template(
-                    name=template["name"],
-                )
-            except RequestError:
-                pass
-            else:
-                templates_to_delete.remove(template)
-
-        if not templates_to_delete:
-            break
-        time.sleep(0.01)
+    if templates_to_delete:
+        client.cluster.delete_component_template(name=",".join(templates_to_delete))
 
 
 def wipe_ilm_policies(client):
@@ -286,6 +281,9 @@ def wipe_ilm_policies(client):
                 ".monitoring-8-ilm-policy",
             }
             and "-history-ilm-polcy" not in policy
+            and "-meta-ilm-policy" not in policy
+            and "-data-ilm-policy" not in policy
+            and "@lifecycle" not in policy
         ):
             client.ilm.delete_lifecycle(name=policy)
 
@@ -334,7 +332,7 @@ def wait_for_pending_tasks(client, filter, timeout=30):
             break
 
 
-def wait_for_pending_datafeeds_and_jobs(client, timeout=30):
+def wait_for_pending_datafeeds_and_jobs(client: Elasticsearch, timeout=30):
     end_time = time.time() + timeout
     while time.time() < end_time:
         resp = client.ml.get_datafeeds(datafeed_id="*", allow_no_match=True)
@@ -345,6 +343,7 @@ def wait_for_pending_datafeeds_and_jobs(client, timeout=30):
                 datafeed_id=datafeed["datafeed_id"]
             )
 
+    end_time = time.time() + timeout
     while time.time() < end_time:
         resp = client.ml.get_jobs(job_id="*", allow_no_match=True)
         if resp["count"] == 0:
@@ -352,6 +351,56 @@ def wait_for_pending_datafeeds_and_jobs(client, timeout=30):
         for job in resp["jobs"]:
             client.options(ignore_status=404).ml.close_job(job_id=job["job_id"])
             client.options(ignore_status=404).ml.delete_job(job_id=job["job_id"])
+
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        resp = client.ml.get_data_frame_analytics(id="*")
+        if resp["count"] == 0:
+            break
+        for job in resp["data_frame_analytics"]:
+            client.options(ignore_status=404).ml.stop_data_frame_analytics(id=job["id"])
+            client.options(ignore_status=404).ml.delete_data_frame_analytics(
+                id=job["id"]
+            )
+
+
+def wipe_filters(client: Elasticsearch, timeout=30):
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        resp = client.ml.get_filters(filter_id="*")
+        if resp["count"] == 0:
+            break
+        for filter in resp["filters"]:
+            client.options(ignore_status=404).ml.delete_filter(
+                filter_id=filter["filter_id"]
+            )
+
+
+def wipe_calendars(client: Elasticsearch, timeout=30):
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        resp = client.ml.get_calendars(calendar_id="*")
+        if resp["count"] == 0:
+            break
+        for calendar in resp["calendars"]:
+            client.options(ignore_status=404).ml.delete_calendar(
+                calendar_id=calendar["calendar_id"]
+            )
+
+
+def wipe_transforms(client: Elasticsearch, timeout=30):
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        resp = client.transform.get_transform(transform_id="*")
+        if resp["count"] == 0:
+            break
+        for trasnform in resp["transforms"]:
+            client.options(ignore_status=404).transform.stop_transform(
+                transform_id=trasnform["id"]
+            )
+            client.options(ignore_status=404).transform.delete_transform(
+                transform_id=trasnform["id"]
+            )
 
 
 def wait_for_cluster_state_updates_to_finish(client, timeout=30):
@@ -362,37 +411,68 @@ def wait_for_cluster_state_updates_to_finish(client, timeout=30):
 
 
 def is_xpack_template(name):
-    if ".monitoring-" in name:
+    if name.startswith("."):
         return True
-    if ".watch" in name or ".triggered_watches" in name:
+    elif name.startswith("behavioral_analytics-events"):
         return True
-    if ".data-frame-" in name:
+    elif name.startswith("elastic-connectors-"):
         return True
-    if ".ml-" in name:
+    elif name.startswith("entities_v1_"):
         return True
-    if ".transform-" in name:
+    elif name.endswith("@ilm"):
         return True
-    if name in {
-        ".watches",
-        "logstash-index-template",
-        ".logstash-management",
-        "security_audit_log",
-        ".slm-history",
-        ".async-search",
-        ".geoip_databases",
-        "saml-service-provider",
-        "ilm-history",
-        "logs",
-        "logs-settings",
-        "logs-mappings",
-        "metrics",
-        "metrics-settings",
-        "metrics-mappings",
-        "synthetics",
-        "synthetics-settings",
-        "synthetics-mappings",
-        ".snapshot-blob-cache",
+    elif name.endswith("@template"):
+        return True
+
+    return name in {
+        "apm-10d@lifecycle",
+        "apm-180d@lifecycle",
+        "apm-390d@lifecycle",
+        "apm-90d@lifecycle",
+        "apm@mappings",
+        "apm@settings",
         "data-streams-mappings",
-    }:
-        return True
-    return False
+        "data-streams@mappings",
+        "elastic-connectors",
+        "ecs@dynamic_templates",
+        "ecs@mappings",
+        "ilm-history-7",
+        "kibana-reporting@settings",
+        "logs",
+        "logs-apm.error@mappings",
+        "logs-apm@settings",
+        "logs-mappings",
+        "logs@mappings",
+        "logs-settings",
+        "logs@settings",
+        "metrics",
+        "metrics-apm@mappings",
+        "metrics-apm.service_destination@mappings",
+        "metrics-apm.service_summary@mappings",
+        "metrics-apm.service_transaction@mappings",
+        "metrics-apm@settings",
+        "metrics-apm.transaction@mappings",
+        "metrics-mappings",
+        "metrics@mappings",
+        "metrics-settings",
+        "metrics@settings",
+        "metrics-tsdb-settings",
+        "metrics@tsdb-settings",
+        "search-acl-filter",
+        "synthetics",
+        "synthetics-mappings",
+        "synthetics@mappings",
+        "synthetics-settings",
+        "synthetics@settings",
+        "traces-apm@mappings",
+        "traces-apm.rum@mappings",
+        "traces@mappings",
+        "traces@settings",
+        # otel
+        "metrics-otel@mappings",
+        "semconv-resource-to-ecs@mappings",
+        "traces-otel@mappings",
+        "ecs-tsdb@mappings",
+        "logs-otel@mappings",
+        "otel@mappings",
+    }

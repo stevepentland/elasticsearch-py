@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Any, Dict, List, Optional, Union
+import typing as t
 
 from elastic_transport import ObjectApiResponse
 
@@ -24,104 +24,163 @@ from .utils import SKIP_IN_PATH, _quote, _rewrite_parameters
 
 
 class AutoscalingClient(NamespacedClient):
+
     @_rewrite_parameters()
     async def delete_autoscaling_policy(
         self,
         *,
-        name: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        name: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Deletes an autoscaling policy. Designed for indirect use by ECE/ESS and ECK.
-        Direct use is not supported.
+        .. raw:: html
+
+          <p>Delete an autoscaling policy.</p>
+          <p>NOTE: This feature is designed for indirect use by Elasticsearch Service, Elastic Cloud Enterprise, and Elastic Cloud on Kubernetes. Direct use is not supported.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/autoscaling-delete-autoscaling-policy.html>`_
 
         :param name: the name of the autoscaling policy
+        :param master_timeout: Period to wait for a connection to the master node. If
+            no response is received before the timeout expires, the request fails and
+            returns an error.
+        :param timeout: Period to wait for a response. If no response is received before
+            the timeout expires, the request fails and returns an error.
         """
         if name in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'name'")
-        __path = f"/_autoscaling/policy/{_quote(name)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"name": _quote(name)}
+        __path = f'/_autoscaling/policy/{__path_parts["name"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
+        if master_timeout is not None:
+            __query["master_timeout"] = master_timeout
         if pretty is not None:
             __query["pretty"] = pretty
+        if timeout is not None:
+            __query["timeout"] = timeout
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "DELETE", __path, params=__query, headers=__headers
+            "DELETE",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="autoscaling.delete_autoscaling_policy",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def get_autoscaling_capacity(
         self,
         *,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Gets the current autoscaling capacity based on the configured autoscaling policy.
-        Designed for indirect use by ECE/ESS and ECK. Direct use is not supported.
+        .. raw:: html
+
+          <p>Get the autoscaling capacity.</p>
+          <p>NOTE: This feature is designed for indirect use by Elasticsearch Service, Elastic Cloud Enterprise, and Elastic Cloud on Kubernetes. Direct use is not supported.</p>
+          <p>This API gets the current autoscaling capacity based on the configured autoscaling policy.
+          It will return information to size the cluster appropriately to the current workload.</p>
+          <p>The <code>required_capacity</code> is calculated as the maximum of the <code>required_capacity</code> result of all individual deciders that are enabled for the policy.</p>
+          <p>The operator should verify that the <code>current_nodes</code> match the operator’s knowledge of the cluster to avoid making autoscaling decisions based on stale or incomplete information.</p>
+          <p>The response contains decider-specific information you can use to diagnose how and why autoscaling determined a certain capacity was required.
+          This information is provided for diagnosis only.
+          Do not use this information to make autoscaling decisions.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/autoscaling-get-autoscaling-capacity.html>`_
+
+        :param master_timeout: Period to wait for a connection to the master node. If
+            no response is received before the timeout expires, the request fails and
+            returns an error.
         """
+        __path_parts: t.Dict[str, str] = {}
         __path = "/_autoscaling/capacity"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
+        if master_timeout is not None:
+            __query["master_timeout"] = master_timeout
         if pretty is not None:
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="autoscaling.get_autoscaling_capacity",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def get_autoscaling_policy(
         self,
         *,
-        name: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        name: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Retrieves an autoscaling policy. Designed for indirect use by ECE/ESS and ECK.
-        Direct use is not supported.
+        .. raw:: html
+
+          <p>Get an autoscaling policy.</p>
+          <p>NOTE: This feature is designed for indirect use by Elasticsearch Service, Elastic Cloud Enterprise, and Elastic Cloud on Kubernetes. Direct use is not supported.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/autoscaling-get-autoscaling-capacity.html>`_
 
         :param name: the name of the autoscaling policy
+        :param master_timeout: Period to wait for a connection to the master node. If
+            no response is received before the timeout expires, the request fails and
+            returns an error.
         """
         if name in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'name'")
-        __path = f"/_autoscaling/policy/{_quote(name)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"name": _quote(name)}
+        __path = f'/_autoscaling/policy/{__path_parts["name"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
+        if master_timeout is not None:
+            __query["master_timeout"] = master_timeout
         if pretty is not None:
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="autoscaling.get_autoscaling_policy",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
@@ -130,38 +189,64 @@ class AutoscalingClient(NamespacedClient):
     async def put_autoscaling_policy(
         self,
         *,
-        name: Any,
-        policy: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        name: str,
+        policy: t.Optional[t.Mapping[str, t.Any]] = None,
+        body: t.Optional[t.Mapping[str, t.Any]] = None,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Creates a new autoscaling policy. Designed for indirect use by ECE/ESS and ECK.
-        Direct use is not supported.
+        .. raw:: html
+
+          <p>Create or update an autoscaling policy.</p>
+          <p>NOTE: This feature is designed for indirect use by Elasticsearch Service, Elastic Cloud Enterprise, and Elastic Cloud on Kubernetes. Direct use is not supported.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/autoscaling-put-autoscaling-policy.html>`_
 
         :param name: the name of the autoscaling policy
         :param policy:
+        :param master_timeout: Period to wait for a connection to the master node. If
+            no response is received before the timeout expires, the request fails and
+            returns an error.
+        :param timeout: Period to wait for a response. If no response is received before
+            the timeout expires, the request fails and returns an error.
         """
         if name in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'name'")
-        if policy is None:
-            raise ValueError("Empty value passed for parameter 'policy'")
-        __path = f"/_autoscaling/policy/{_quote(name)}"
-        __query: Dict[str, Any] = {}
+        if policy is None and body is None:
+            raise ValueError(
+                "Empty value passed for parameters 'policy' and 'body', one of them should be set."
+            )
+        elif policy is not None and body is not None:
+            raise ValueError("Cannot set both 'policy' and 'body'")
+        __path_parts: t.Dict[str, str] = {"name": _quote(name)}
+        __path = f'/_autoscaling/policy/{__path_parts["name"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
+        if master_timeout is not None:
+            __query["master_timeout"] = master_timeout
         if pretty is not None:
             __query["pretty"] = pretty
-        __body = policy
+        if timeout is not None:
+            __query["timeout"] = timeout
+        __body = policy if policy is not None else body
         __headers = {"accept": "application/json", "content-type": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "PUT", __path, params=__query, headers=__headers, body=__body
+            "PUT",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="autoscaling.put_autoscaling_policy",
+            path_parts=__path_parts,
         )

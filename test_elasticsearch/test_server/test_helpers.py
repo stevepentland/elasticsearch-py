@@ -17,17 +17,17 @@
 
 import json
 from datetime import datetime, timedelta
+from unittest.mock import call, patch
 
 import pytest
 from dateutil import tz
 from elastic_transport import ApiResponseMeta, ObjectApiResponse
-from mock import call, patch
 
 from elasticsearch import ApiError, helpers
 from elasticsearch.helpers import ScanError
 
 
-class FailingBulkClient(object):
+class FailingBulkClient:
     def __init__(
         self,
         client,
@@ -41,6 +41,7 @@ class FailingBulkClient(object):
         ),
     ):
         self.client = client
+        self._otel = client._otel
         self._called = 0
         self._fail_at = fail_at
         self.transport = client.transport
@@ -82,7 +83,6 @@ def test_bulk_all_errors_from_chunk_are_raised_on_failure(sync_client):
             "settings": {"number_of_shards": 1, "number_of_replicas": 0},
         },
     )
-    sync_client.cluster.health(wait_for_status="yellow")
 
     try:
         for ok, _ in helpers.streaming_bulk(
@@ -288,6 +288,45 @@ def test_bulk_transport_error_is_raised_with_max_retries(sync_client):
     assert 4 == failing_client._called
 
 
+def test_connection_timeout_is_retried_with_retry_status_callback(sync_client):
+    failing_client = FailingBulkClient(
+        sync_client,
+        fail_with=ApiError(
+            message="Connection timed out!",
+            body={},
+            meta=ApiResponseMeta(
+                status=522, headers={}, http_version="1.1", duration=0, node=None
+            ),
+        ),
+    )
+    docs = [
+        {"_index": "i", "_id": 47, "f": "v"},
+        {"_index": "i", "_id": 45, "f": "v"},
+        {"_index": "i", "_id": 42, "f": "v"},
+    ]
+
+    results = list(
+        helpers.streaming_bulk(
+            failing_client,
+            docs,
+            index="i",
+            raise_on_exception=False,
+            raise_on_error=False,
+            chunk_size=1,
+            retry_on_status=522,
+            max_retries=1,
+            initial_backoff=0,
+        )
+    )
+    assert 3 == len(results)
+    print(results)
+    assert [True, True, True] == [r[0] for r in results]
+    sync_client.indices.refresh(index="i")
+    res = sync_client.search(index="i")
+    assert {"value": 3, "relation": "eq"} == res["hits"]["total"]
+    assert 4 == failing_client._called
+
+
 def test_bulk_works_with_single_item(sync_client):
     docs = [{"answer": 42, "_id": 1}]
     success, failed = helpers.bulk(sync_client, docs, index="test-index", refresh=True)
@@ -325,7 +364,6 @@ def test_errors_are_reported_correctly(sync_client):
         mappings={"properties": {"a": {"type": "integer"}}},
         settings={"number_of_shards": 1, "number_of_replicas": 0},
     )
-    sync_client.cluster.health(wait_for_status="yellow")
 
     success, failed = helpers.bulk(
         sync_client,
@@ -339,9 +377,7 @@ def test_errors_are_reported_correctly(sync_client):
     assert "42" == error["index"]["_id"]
     assert "i" == error["index"]["_index"]
     print(error["index"]["error"])
-    assert "MapperParsingException" in repr(
-        error["index"]["error"]
-    ) or "mapper_parsing_exception" in repr(error["index"]["error"])
+    assert error["index"]["error"]["type"] == "document_parsing_exception"
 
 
 def test_error_is_raised(sync_client):
@@ -350,7 +386,6 @@ def test_error_is_raised(sync_client):
         mappings={"properties": {"a": {"type": "integer"}}},
         settings={"number_of_shards": 1, "number_of_replicas": 0},
     )
-    sync_client.cluster.health(wait_for_status="yellow")
 
     with pytest.raises(helpers.BulkIndexError):
         helpers.bulk(
@@ -397,7 +432,6 @@ def test_errors_are_collected_properly(sync_client):
         mappings={"properties": {"a": {"type": "integer"}}},
         settings={"number_of_shards": 1, "number_of_replicas": 0},
     )
-    sync_client.cluster.health(wait_for_status="yellow")
 
     success, failed = helpers.bulk(
         sync_client,
@@ -469,8 +503,8 @@ def test_all_documents_are_read(sync_client):
     docs = list(helpers.scan(sync_client, index="test_index", size=2))
 
     assert 100 == len(docs)
-    assert set(map(str, range(100))) == set(d["_id"] for d in docs)
-    assert set(range(100)) == set(d["_source"]["answer"] for d in docs)
+    assert set(map(str, range(100))) == {d["_id"] for d in docs}
+    assert set(range(100)) == {d["_source"]["answer"] for d in docs}
 
 
 @pytest.mark.usefixtures("scan_teardown")
@@ -528,7 +562,6 @@ def test_initial_search_error(sync_client):
         with patch.object(sync_client, "scroll") as scroll_mock, patch.object(
             sync_client, "clear_scroll"
         ) as clear_scroll_mock:
-
             scroll_mock.side_effect = mock_scroll_responses
             data = list(
                 helpers.scan(
@@ -549,7 +582,6 @@ def test_initial_search_error(sync_client):
         with patch.object(sync_client, "scroll") as scroll_mock, patch.object(
             sync_client, "clear_scroll"
         ) as clear_scroll_mock:
-
             scroll_mock.side_effect = mock_scroll_responses
             with pytest.raises(ScanError):
                 data = list(
@@ -644,7 +676,6 @@ def test_scan_auth_kwargs_forwarded(sync_client, kwargs):
 
 
 def test_scan_auth_kwargs_favor_scroll_kwargs_option(sync_client):
-
     with patch.object(
         sync_client, "options", return_value=sync_client
     ) as options_mock, patch.object(
@@ -672,7 +703,6 @@ def test_scan_auth_kwargs_favor_scroll_kwargs_option(sync_client):
     ) as scroll_mock, patch.object(
         sync_client, "clear_scroll", return_value=ObjectApiResponse(raw={}, meta=None)
     ):
-
         data = list(
             helpers.scan(
                 sync_client,
@@ -797,6 +827,35 @@ def test_shards_no_skipped_field(sync_client):
             helpers.scan(sync_client, index="test_index", size=2, raise_on_error=True)
         )
         assert data == [{"search_data": 1}, {"scroll_data": 42}]
+
+
+@pytest.mark.parametrize(
+    "scan_kwargs",
+    [
+        {"from": 1},
+        {"from_": 1},
+        {"query": {"from": 1}},
+        {"query": {"from_": 1}},
+        {"query": {"query": {"match_all": {}}}, "from": 1},
+        {"query": {"query": {"match_all": {}}}, "from_": 1},
+    ],
+)
+def test_scan_from_keyword_is_aliased(sync_client, scan_kwargs):
+    with patch.object(sync_client, "options", return_value=sync_client), patch.object(
+        sync_client,
+        "search",
+        return_value=ObjectApiResponse(
+            raw={
+                "_scroll_id": "dummy_id",
+                "_shards": {"successful": 5, "total": 5},
+                "hits": {"hits": []},
+            },
+            meta=None,
+        ),
+    ) as search_mock, patch.object(sync_client, "clear_scroll"):
+        list(helpers.scan(sync_client, index="test_index", **scan_kwargs))
+        assert search_mock.call_args[1]["from_"] == 1
+        assert "from" not in search_mock.call_args[1]
 
 
 @pytest.fixture(scope="function")

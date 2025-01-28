@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Any, Dict, List, Optional, Union
+import typing as t
 
 from elastic_transport import ObjectApiResponse
 
@@ -24,28 +24,36 @@ from .utils import SKIP_IN_PATH, _quote, _rewrite_parameters
 
 
 class EqlClient(NamespacedClient):
+
     @_rewrite_parameters()
     def delete(
         self,
         *,
-        id: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        id: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Deletes an async EQL search by ID. If the search is still running, the search
-        request will be cancelled. Otherwise, the saved search results are deleted.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/eql-search-api.html>`_
+          <p>Delete an async EQL search.
+          Delete an async EQL search or a stored synchronous EQL search.
+          The API also deletes results for the search.</p>
 
-        :param id: Identifier for the search to delete.
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/eql-search-api.html>`_
+
+        :param id: Identifier for the search to delete. A search ID is provided in the
+            EQL search API's response for an async search. A search ID is also provided
+            if the request’s `keep_on_completion` parameter is `true`.
         """
         if id in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'id'")
-        __path = f"/_eql/search/{_quote(id)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"id": _quote(id)}
+        __path = f'/_eql/search/{__path_parts["id"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -56,25 +64,36 @@ class EqlClient(NamespacedClient):
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "DELETE", __path, params=__query, headers=__headers
+            "DELETE",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="eql.delete",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     def get(
         self,
         *,
-        id: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        keep_alive: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        wait_for_completion_timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        id: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        keep_alive: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        wait_for_completion_timeout: t.Optional[
+            t.Union[str, t.Literal[-1], t.Literal[0]]
+        ] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Returns async results from previously executed Event Query Language (EQL) search
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/eql-search-api.html>`_
+          <p>Get async EQL search results.
+          Get the current status and available results for an async EQL search or a stored synchronous EQL search.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/get-async-eql-search-api.html>`_
 
         :param id: Identifier for the search.
         :param keep_alive: Period for which the search and its results are stored on
@@ -86,8 +105,9 @@ class EqlClient(NamespacedClient):
         """
         if id in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'id'")
-        __path = f"/_eql/search/{_quote(id)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"id": _quote(id)}
+        __path = f'/_eql/search/{__path_parts["id"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -102,31 +122,40 @@ class EqlClient(NamespacedClient):
             __query["wait_for_completion_timeout"] = wait_for_completion_timeout
         __headers = {"accept": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="eql.get",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     def get_status(
         self,
         *,
-        id: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        id: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Returns the status of a previously submitted async or stored Event Query Language
-        (EQL) search
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/eql-search-api.html>`_
+          <p>Get the async EQL status.
+          Get the current status for an async EQL search or a stored synchronous EQL search without returning results.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/get-async-eql-status-api.html>`_
 
         :param id: Identifier for the search.
         """
         if id in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'id'")
-        __path = f"/_eql/search/status/{_quote(id)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"id": _quote(id)}
+        __path = f'/_eql/search/status/{__path_parts["id"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -137,46 +166,93 @@ class EqlClient(NamespacedClient):
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="eql.get_status",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
-        body_fields=True,
+        body_fields=(
+            "query",
+            "allow_partial_search_results",
+            "allow_partial_sequence_results",
+            "case_sensitive",
+            "event_category_field",
+            "fetch_size",
+            "fields",
+            "filter",
+            "keep_alive",
+            "keep_on_completion",
+            "max_samples_per_key",
+            "result_position",
+            "runtime_mappings",
+            "size",
+            "tiebreaker_field",
+            "timestamp_field",
+            "wait_for_completion_timeout",
+        ),
     )
     def search(
         self,
         *,
-        index: Any,
-        query: str,
-        allow_no_indices: Optional[bool] = None,
-        case_sensitive: Optional[bool] = None,
-        error_trace: Optional[bool] = None,
-        event_category_field: Optional[Any] = None,
-        expand_wildcards: Optional[Any] = None,
-        fetch_size: Optional[int] = None,
-        fields: Optional[Union[Any, List[Any]]] = None,
-        filter: Optional[Union[Any, List[Any]]] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        ignore_unavailable: Optional[bool] = None,
-        keep_alive: Optional[Any] = None,
-        keep_on_completion: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-        result_position: Optional[Any] = None,
-        runtime_mappings: Optional[Any] = None,
-        size: Optional[int] = None,
-        tiebreaker_field: Optional[Any] = None,
-        timestamp_field: Optional[Any] = None,
-        wait_for_completion_timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: t.Union[str, t.Sequence[str]],
+        query: t.Optional[str] = None,
+        allow_no_indices: t.Optional[bool] = None,
+        allow_partial_search_results: t.Optional[bool] = None,
+        allow_partial_sequence_results: t.Optional[bool] = None,
+        case_sensitive: t.Optional[bool] = None,
+        error_trace: t.Optional[bool] = None,
+        event_category_field: t.Optional[str] = None,
+        expand_wildcards: t.Optional[
+            t.Union[
+                t.Sequence[
+                    t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]]
+                ],
+                t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]],
+            ]
+        ] = None,
+        fetch_size: t.Optional[int] = None,
+        fields: t.Optional[
+            t.Union[t.Mapping[str, t.Any], t.Sequence[t.Mapping[str, t.Any]]]
+        ] = None,
+        filter: t.Optional[
+            t.Union[t.Mapping[str, t.Any], t.Sequence[t.Mapping[str, t.Any]]]
+        ] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        ignore_unavailable: t.Optional[bool] = None,
+        keep_alive: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        keep_on_completion: t.Optional[bool] = None,
+        max_samples_per_key: t.Optional[int] = None,
+        pretty: t.Optional[bool] = None,
+        result_position: t.Optional[t.Union[str, t.Literal["head", "tail"]]] = None,
+        runtime_mappings: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        size: t.Optional[int] = None,
+        tiebreaker_field: t.Optional[str] = None,
+        timestamp_field: t.Optional[str] = None,
+        wait_for_completion_timeout: t.Optional[
+            t.Union[str, t.Literal[-1], t.Literal[0]]
+        ] = None,
+        body: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Returns results matching a query expressed in Event Query Language (EQL)
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/eql-search-api.html>`_
+          <p>Get EQL search results.
+          Returns search results for an Event Query Language (EQL) query.
+          EQL assumes each document in a data stream or index corresponds to an event.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/eql-search-api.html>`_
 
         :param index: The name of the index to scope the operation
         :param query: EQL query you wish to run.
         :param allow_no_indices:
+        :param allow_partial_search_results:
+        :param allow_partial_sequence_results:
         :param case_sensitive:
         :param event_category_field: Field containing the event classification, such
             as process, file, or network.
@@ -191,6 +267,11 @@ class EqlClient(NamespacedClient):
             in the response.
         :param keep_alive:
         :param keep_on_completion:
+        :param max_samples_per_key: By default, the response of a sample query contains
+            up to `10` samples, with one sample per unique set of join keys. Use the
+            `size` parameter to get a smaller or larger set of samples. To retrieve more
+            than one sample per set of join keys, use the `max_samples_per_key` parameter.
+            Pipes are not supported for sample queries.
         :param result_position:
         :param runtime_mappings:
         :param size: For basic queries, the maximum number of matching events to return.
@@ -202,54 +283,70 @@ class EqlClient(NamespacedClient):
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        if query is None:
+        if query is None and body is None:
             raise ValueError("Empty value passed for parameter 'query'")
-        __path = f"/{_quote(index)}/_eql/search"
-        __body: Dict[str, Any] = {}
-        __query: Dict[str, Any] = {}
-        if query is not None:
-            __body["query"] = query
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/{__path_parts["index"]}/_eql/search'
+        __query: t.Dict[str, t.Any] = {}
+        __body: t.Dict[str, t.Any] = body if body is not None else {}
         if allow_no_indices is not None:
             __query["allow_no_indices"] = allow_no_indices
-        if case_sensitive is not None:
-            __body["case_sensitive"] = case_sensitive
         if error_trace is not None:
             __query["error_trace"] = error_trace
-        if event_category_field is not None:
-            __body["event_category_field"] = event_category_field
         if expand_wildcards is not None:
             __query["expand_wildcards"] = expand_wildcards
-        if fetch_size is not None:
-            __body["fetch_size"] = fetch_size
-        if fields is not None:
-            __body["fields"] = fields
-        if filter is not None:
-            __body["filter"] = filter
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
         if ignore_unavailable is not None:
             __query["ignore_unavailable"] = ignore_unavailable
-        if keep_alive is not None:
-            __body["keep_alive"] = keep_alive
-        if keep_on_completion is not None:
-            __body["keep_on_completion"] = keep_on_completion
         if pretty is not None:
             __query["pretty"] = pretty
-        if result_position is not None:
-            __body["result_position"] = result_position
-        if runtime_mappings is not None:
-            __body["runtime_mappings"] = runtime_mappings
-        if size is not None:
-            __body["size"] = size
-        if tiebreaker_field is not None:
-            __body["tiebreaker_field"] = tiebreaker_field
-        if timestamp_field is not None:
-            __body["timestamp_field"] = timestamp_field
-        if wait_for_completion_timeout is not None:
-            __body["wait_for_completion_timeout"] = wait_for_completion_timeout
+        if not __body:
+            if query is not None:
+                __body["query"] = query
+            if allow_partial_search_results is not None:
+                __body["allow_partial_search_results"] = allow_partial_search_results
+            if allow_partial_sequence_results is not None:
+                __body["allow_partial_sequence_results"] = (
+                    allow_partial_sequence_results
+                )
+            if case_sensitive is not None:
+                __body["case_sensitive"] = case_sensitive
+            if event_category_field is not None:
+                __body["event_category_field"] = event_category_field
+            if fetch_size is not None:
+                __body["fetch_size"] = fetch_size
+            if fields is not None:
+                __body["fields"] = fields
+            if filter is not None:
+                __body["filter"] = filter
+            if keep_alive is not None:
+                __body["keep_alive"] = keep_alive
+            if keep_on_completion is not None:
+                __body["keep_on_completion"] = keep_on_completion
+            if max_samples_per_key is not None:
+                __body["max_samples_per_key"] = max_samples_per_key
+            if result_position is not None:
+                __body["result_position"] = result_position
+            if runtime_mappings is not None:
+                __body["runtime_mappings"] = runtime_mappings
+            if size is not None:
+                __body["size"] = size
+            if tiebreaker_field is not None:
+                __body["tiebreaker_field"] = tiebreaker_field
+            if timestamp_field is not None:
+                __body["timestamp_field"] = timestamp_field
+            if wait_for_completion_timeout is not None:
+                __body["wait_for_completion_timeout"] = wait_for_completion_timeout
         __headers = {"accept": "application/json", "content-type": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers, body=__body
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="eql.search",
+            path_parts=__path_parts,
         )
