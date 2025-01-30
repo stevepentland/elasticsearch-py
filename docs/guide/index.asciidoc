@@ -2,9 +2,13 @@
 
 :doctype:           book
 
+include::{asciidoc-dir}/../../shared/versions/stack/{source_branch}.asciidoc[]
+
 include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
 
 include::overview.asciidoc[]
+
+include::getting-started.asciidoc[]
 
 include::installation.asciidoc[]
 
@@ -12,11 +16,15 @@ include::connecting.asciidoc[]
 
 include::configuration.asciidoc[]
 
+include::async.asciidoc[]
+
 include::migration.asciidoc[]
 
 include::integrations.asciidoc[]
 
 include::examples.asciidoc[]
+
+include::elasticsearch-dsl.asciidoc[]
 
 include::helpers.asciidoc[]
 

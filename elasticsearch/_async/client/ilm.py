@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Any, Dict, List, Optional, Union
+import typing as t
 
 from elastic_transport import ObjectApiResponse
 
@@ -24,23 +24,27 @@ from .utils import SKIP_IN_PATH, _quote, _rewrite_parameters
 
 
 class IlmClient(NamespacedClient):
+
     @_rewrite_parameters()
     async def delete_lifecycle(
         self,
         *,
-        name: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        master_timeout: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        name: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Deletes the specified lifecycle policy definition. A currently used policy cannot
-        be deleted.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-delete-lifecycle.html>`_
+          <p>Delete a lifecycle policy.
+          You cannot delete policies that are currently in use. If the policy is being used to manage any indices, the request fails and returns an error.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-delete-lifecycle.html>`_
 
         :param name: Identifier for the policy.
         :param master_timeout: Period to wait for a connection to the master node. If
@@ -51,8 +55,9 @@ class IlmClient(NamespacedClient):
         """
         if name in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'name'")
-        __path = f"/_ilm/policy/{_quote(name)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"policy": _quote(name)}
+        __path = f'/_ilm/policy/{__path_parts["policy"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -67,28 +72,37 @@ class IlmClient(NamespacedClient):
             __query["timeout"] = timeout
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "DELETE", __path, params=__query, headers=__headers
+            "DELETE",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.delete_lifecycle",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def explain_lifecycle(
         self,
         *,
-        index: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        master_timeout: Optional[Any] = None,
-        only_errors: Optional[bool] = None,
-        only_managed: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        only_errors: t.Optional[bool] = None,
+        only_managed: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Retrieves information about the index's current lifecycle state, such as the
-        currently executing phase, action, and step.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-explain-lifecycle.html>`_
+          <p>Explain the lifecycle state.
+          Get the current lifecycle status for one or more indices.
+          For data streams, the API retrieves the current lifecycle status for the stream's backing indices.</p>
+          <p>The response indicates when the index entered each lifecycle state, provides the definition of the running phase, and information about any failures.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-explain-lifecycle.html>`_
 
         :param index: Comma-separated list of data streams, indices, and aliases to target.
             Supports wildcards (`*`). To target all data streams and indices, use `*`
@@ -97,17 +111,16 @@ class IlmClient(NamespacedClient):
             no response is received before the timeout expires, the request fails and
             returns an error.
         :param only_errors: Filters the returned indices to only indices that are managed
-            by ILM.
-        :param only_managed: Filters the returned indices to only indices that are managed
             by ILM and are in an error state, either due to an encountering an error
             while executing the policy, or attempting to use a policy that does not exist.
-        :param timeout: Period to wait for a response. If no response is received before
-            the timeout expires, the request fails and returns an error.
+        :param only_managed: Filters the returned indices to only indices that are managed
+            by ILM.
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        __path = f"/{_quote(index)}/_ilm/explain"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/{__path_parts["index"]}/_ilm/explain'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -122,30 +135,35 @@ class IlmClient(NamespacedClient):
             __query["only_managed"] = only_managed
         if pretty is not None:
             __query["pretty"] = pretty
-        if timeout is not None:
-            __query["timeout"] = timeout
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.explain_lifecycle",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def get_lifecycle(
         self,
         *,
-        name: Optional[Any] = None,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        master_timeout: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        name: t.Optional[str] = None,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Returns the specified policy definition. Includes the policy version and last
-        modified date.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-get-lifecycle.html>`_
+          <p>Get lifecycle policies.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-get-lifecycle.html>`_
 
         :param name: Identifier for the policy.
         :param master_timeout: Period to wait for a connection to the master node. If
@@ -154,11 +172,14 @@ class IlmClient(NamespacedClient):
         :param timeout: Period to wait for a response. If no response is received before
             the timeout expires, the request fails and returns an error.
         """
+        __path_parts: t.Dict[str, str]
         if name not in SKIP_IN_PATH:
-            __path = f"/_ilm/policy/{_quote(name)}"
+            __path_parts = {"policy": _quote(name)}
+            __path = f'/_ilm/policy/{__path_parts["policy"]}'
         else:
+            __path_parts = {}
             __path = "/_ilm/policy"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -173,25 +194,35 @@ class IlmClient(NamespacedClient):
             __query["timeout"] = timeout
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.get_lifecycle",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def get_status(
         self,
         *,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Retrieves the current index lifecycle management (ILM) status.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-get-status.html>`_
+          <p>Get the ILM status.
+          Get the current index lifecycle management status.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-get-status.html>`_
         """
+        __path_parts: t.Dict[str, str] = {}
         __path = "/_ilm/status"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -202,28 +233,48 @@ class IlmClient(NamespacedClient):
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.get_status",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
-        body_fields=True,
+        body_fields=("legacy_template_to_delete", "node_attribute"),
     )
     async def migrate_to_data_tiers(
         self,
         *,
-        dry_run: Optional[bool] = None,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        legacy_template_to_delete: Optional[str] = None,
-        node_attribute: Optional[str] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        dry_run: t.Optional[bool] = None,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        legacy_template_to_delete: t.Optional[str] = None,
+        node_attribute: t.Optional[str] = None,
+        pretty: t.Optional[bool] = None,
+        body: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Migrates the indices and ILM policies away from custom node attribute allocation
-        routing to data tiers routing
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-migrate-to-data-tiers.html>`_
+          <p>Migrate to data tiers routing.
+          Switch the indices, ILM policies, and legacy, composable, and component templates from using custom node attributes and attribute-based allocation filters to using data tiers.
+          Optionally, delete one legacy index template.
+          Using node roles enables ILM to automatically move the indices between data tiers.</p>
+          <p>Migrating away from custom node attributes routing can be manually performed.
+          This API provides an automated way of performing three out of the four manual steps listed in the migration guide:</p>
+          <ol>
+          <li>Stop setting the custom hot attribute on new indices.</li>
+          <li>Remove custom allocation settings from existing ILM policies.</li>
+          <li>Replace custom allocation settings from existing indices with the corresponding tier preference.</li>
+          </ol>
+          <p>ILM must be stopped before performing the migration.
+          Use the stop ILM and get ILM status APIs to wait until the reported operation mode is <code>STOPPED</code>.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-migrate-to-data-tiers.html>`_
 
         :param dry_run: If true, simulates the migration from node attributes based allocation
             filters to data tiers, but does not perform the migration. This provides
@@ -231,9 +282,10 @@ class IlmClient(NamespacedClient):
         :param legacy_template_to_delete:
         :param node_attribute:
         """
+        __path_parts: t.Dict[str, str] = {}
         __path = "/_ilm/migrate_to_data_tiers"
-        __query: Dict[str, Any] = {}
-        __body: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
+        __body: t.Dict[str, t.Any] = body if body is not None else {}
         if dry_run is not None:
             __query["dry_run"] = dry_run
         if error_trace is not None:
@@ -242,89 +294,128 @@ class IlmClient(NamespacedClient):
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
-        if legacy_template_to_delete is not None:
-            __body["legacy_template_to_delete"] = legacy_template_to_delete
-        if node_attribute is not None:
-            __body["node_attribute"] = node_attribute
         if pretty is not None:
             __query["pretty"] = pretty
+        if not __body:
+            if legacy_template_to_delete is not None:
+                __body["legacy_template_to_delete"] = legacy_template_to_delete
+            if node_attribute is not None:
+                __body["node_attribute"] = node_attribute
         if not __body:
             __body = None  # type: ignore[assignment]
         __headers = {"accept": "application/json"}
         if __body is not None:
             __headers["content-type"] = "application/json"
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers, body=__body
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="ilm.migrate_to_data_tiers",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
-        body_fields=True,
+        body_fields=("current_step", "next_step"),
     )
     async def move_to_step(
         self,
         *,
-        index: Any,
-        current_step: Optional[Any] = None,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        next_step: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: str,
+        current_step: t.Optional[t.Mapping[str, t.Any]] = None,
+        next_step: t.Optional[t.Mapping[str, t.Any]] = None,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+        body: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Manually moves an index into the specified step and executes that step.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-move-to-step.html>`_
+          <p>Move to a lifecycle step.
+          Manually move an index into a specific step in the lifecycle policy and run that step.</p>
+          <p>WARNING: This operation can result in the loss of data. Manually moving an index into a specific step runs that step even if it has already been performed. This is a potentially destructive action and this should be considered an expert level API.</p>
+          <p>You must specify both the current step and the step to be executed in the body of the request.
+          The request will fail if the current step does not match the step currently running for the index
+          This is to prevent the index from being moved from an unexpected step into the next step.</p>
+          <p>When specifying the target (<code>next_step</code>) to which the index will be moved, either the name or both the action and name fields are optional.
+          If only the phase is specified, the index will move to the first step of the first action in the target phase.
+          If the phase and action are specified, the index will move to the first step of the specified action in the specified phase.
+          Only actions specified in the ILM policy are considered valid.
+          An index cannot move to a step that is not part of its policy.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-move-to-step.html>`_
 
         :param index: The name of the index whose lifecycle step is to change
-        :param current_step:
-        :param next_step:
+        :param current_step: The step that the index is expected to be in.
+        :param next_step: The step that you want to run.
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        __path = f"/_ilm/move/{_quote(index)}"
-        __body: Dict[str, Any] = {}
-        __query: Dict[str, Any] = {}
-        if current_step is not None:
-            __body["current_step"] = current_step
+        if current_step is None and body is None:
+            raise ValueError("Empty value passed for parameter 'current_step'")
+        if next_step is None and body is None:
+            raise ValueError("Empty value passed for parameter 'next_step'")
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/_ilm/move/{__path_parts["index"]}'
+        __query: t.Dict[str, t.Any] = {}
+        __body: t.Dict[str, t.Any] = body if body is not None else {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
-        if next_step is not None:
-            __body["next_step"] = next_step
         if pretty is not None:
             __query["pretty"] = pretty
+        if not __body:
+            if current_step is not None:
+                __body["current_step"] = current_step
+            if next_step is not None:
+                __body["next_step"] = next_step
         if not __body:
             __body = None  # type: ignore[assignment]
         __headers = {"accept": "application/json"}
         if __body is not None:
             __headers["content-type"] = "application/json"
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers, body=__body
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="ilm.move_to_step",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
-        body_fields=True,
+        body_fields=("policy",),
     )
     async def put_lifecycle(
         self,
         *,
-        name: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        master_timeout: Optional[Any] = None,
-        policy: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        name: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        policy: t.Optional[t.Mapping[str, t.Any]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        body: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Creates a lifecycle policy
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-put-lifecycle.html>`_
+          <p>Create or update a lifecycle policy.
+          If the specified policy exists, it is replaced and the policy version is incremented.</p>
+          <p>NOTE: Only the latest version of the policy is stored, you cannot revert to previous versions.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-put-lifecycle.html>`_
 
         :param name: Identifier for the policy.
         :param master_timeout: Period to wait for a connection to the master node. If
@@ -336,9 +427,10 @@ class IlmClient(NamespacedClient):
         """
         if name in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'name'")
-        __path = f"/_ilm/policy/{_quote(name)}"
-        __query: Dict[str, Any] = {}
-        __body: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"policy": _quote(name)}
+        __path = f'/_ilm/policy/{__path_parts["policy"]}'
+        __query: t.Dict[str, t.Any] = {}
+        __body: t.Dict[str, t.Any] = body if body is not None else {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -347,42 +439,55 @@ class IlmClient(NamespacedClient):
             __query["human"] = human
         if master_timeout is not None:
             __query["master_timeout"] = master_timeout
-        if policy is not None:
-            __body["policy"] = policy
         if pretty is not None:
             __query["pretty"] = pretty
         if timeout is not None:
             __query["timeout"] = timeout
+        if not __body:
+            if policy is not None:
+                __body["policy"] = policy
         if not __body:
             __body = None  # type: ignore[assignment]
         __headers = {"accept": "application/json"}
         if __body is not None:
             __headers["content-type"] = "application/json"
         return await self.perform_request(  # type: ignore[return-value]
-            "PUT", __path, params=__query, headers=__headers, body=__body
+            "PUT",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="ilm.put_lifecycle",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def remove_policy(
         self,
         *,
-        index: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Removes the assigned lifecycle policy and stops managing the specified index
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-remove-policy.html>`_
+          <p>Remove policies from an index.
+          Remove the assigned lifecycle policies from an index or a data stream's backing indices.
+          It also stops managing the indices.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-remove-policy.html>`_
 
         :param index: The name of the index to remove policy on
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        __path = f"/{_quote(index)}/_ilm/remove"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/{__path_parts["index"]}/_ilm/remove'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -393,31 +498,43 @@ class IlmClient(NamespacedClient):
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.remove_policy",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def retry(
         self,
         *,
-        index: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Retries executing the policy for an index that is in the ERROR step.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-retry-policy.html>`_
+          <p>Retry a policy.
+          Retry running the lifecycle policy for an index that is in the ERROR step.
+          The API sets the policy back to the step where the error occurred and runs the step.
+          Use the explain lifecycle state API to determine whether an index is in the ERROR step.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-retry-policy.html>`_
 
         :param index: The name of the indices (comma-separated) whose failed lifecycle
             step is to be retry
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        __path = f"/{_quote(index)}/_ilm/retry"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/{__path_parts["index"]}/_ilm/retry'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -428,30 +545,45 @@ class IlmClient(NamespacedClient):
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.retry",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def start(
         self,
         *,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        master_timeout: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Start the index lifecycle management (ILM) plugin.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-start.html>`_
+          <p>Start the ILM plugin.
+          Start the index lifecycle management plugin if it is currently stopped.
+          ILM is started automatically when the cluster is formed.
+          Restarting ILM is necessary only when it has been stopped using the stop ILM API.</p>
 
-        :param master_timeout:
-        :param timeout:
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-start.html>`_
+
+        :param master_timeout: Period to wait for a connection to the master node. If
+            no response is received before the timeout expires, the request fails and
+            returns an error.
+        :param timeout: Period to wait for a response. If no response is received before
+            the timeout expires, the request fails and returns an error.
         """
+        __path_parts: t.Dict[str, str] = {}
         __path = "/_ilm/start"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -466,31 +598,46 @@ class IlmClient(NamespacedClient):
             __query["timeout"] = timeout
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.start",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     async def stop(
         self,
         *,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        master_timeout: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        master_timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Halts all lifecycle management operations and stops the index lifecycle management
-        (ILM) plugin
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-stop.html>`_
+          <p>Stop the ILM plugin.
+          Halt all lifecycle management operations and stop the index lifecycle management plugin.
+          This is useful when you are performing maintenance on the cluster and need to prevent ILM from performing any actions on your indices.</p>
+          <p>The API returns as soon as the stop request has been acknowledged, but the plugin might continue to run until in-progress operations complete and the plugin can be safely stopped.
+          Use the get ILM status API to check whether ILM is running.</p>
 
-        :param master_timeout:
-        :param timeout:
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/ilm-stop.html>`_
+
+        :param master_timeout: Period to wait for a connection to the master node. If
+            no response is received before the timeout expires, the request fails and
+            returns an error.
+        :param timeout: Period to wait for a response. If no response is received before
+            the timeout expires, the request fails and returns an error.
         """
+        __path_parts: t.Dict[str, str] = {}
         __path = "/_ilm/stop"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -505,5 +652,10 @@ class IlmClient(NamespacedClient):
             __query["timeout"] = timeout
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="ilm.stop",
+            path_parts=__path_parts,
         )

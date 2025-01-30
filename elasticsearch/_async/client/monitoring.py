@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Any, Dict, List, Optional, Union
+import typing as t
 
 from elastic_transport import ObjectApiResponse
 
@@ -24,23 +24,29 @@ from .utils import _rewrite_parameters
 
 
 class MonitoringClient(NamespacedClient):
+
     @_rewrite_parameters(
         body_name="operations",
     )
     async def bulk(
         self,
         *,
-        interval: Any,
-        operations: List[Any],
+        interval: t.Union[str, t.Literal[-1], t.Literal[0]],
+        operations: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        body: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
         system_api_version: str,
         system_id: str,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Used by the monitoring features to send monitoring data.
+        .. raw:: html
+
+          <p>Send monitoring data.
+          This API is used by the monitoring features to send monitoring data.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/monitor-elasticsearch-cluster.html>`_
 
@@ -51,14 +57,19 @@ class MonitoringClient(NamespacedClient):
         """
         if interval is None:
             raise ValueError("Empty value passed for parameter 'interval'")
-        if operations is None:
-            raise ValueError("Empty value passed for parameter 'operations'")
+        if operations is None and body is None:
+            raise ValueError(
+                "Empty value passed for parameters 'operations' and 'body', one of them should be set."
+            )
+        elif operations is not None and body is not None:
+            raise ValueError("Cannot set both 'operations' and 'body'")
         if system_api_version is None:
             raise ValueError("Empty value passed for parameter 'system_api_version'")
         if system_id is None:
             raise ValueError("Empty value passed for parameter 'system_id'")
+        __path_parts: t.Dict[str, str] = {}
         __path = "/_monitoring/bulk"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if interval is not None:
             __query["interval"] = interval
         if system_api_version is not None:
@@ -73,11 +84,17 @@ class MonitoringClient(NamespacedClient):
             __query["human"] = human
         if pretty is not None:
             __query["pretty"] = pretty
-        __body = operations
+        __body = operations if operations is not None else body
         __headers = {
             "accept": "application/json",
             "content-type": "application/x-ndjson",
         }
         return await self.perform_request(  # type: ignore[return-value]
-            "PUT", __path, params=__query, headers=__headers, body=__body
+            "PUT",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="monitoring.bulk",
+            path_parts=__path_parts,
         )

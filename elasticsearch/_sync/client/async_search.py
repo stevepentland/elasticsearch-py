@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Any, Dict, List, Optional, Union
+import typing as t
 
 from elastic_transport import ObjectApiResponse
 
@@ -24,28 +24,35 @@ from .utils import SKIP_IN_PATH, _quote, _rewrite_parameters
 
 
 class AsyncSearchClient(NamespacedClient):
+
     @_rewrite_parameters()
     def delete(
         self,
         *,
-        id: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        id: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Deletes an async search by ID. If the search is still running, the search request
-        will be cancelled. Otherwise, the saved search results are deleted.
+        .. raw:: html
+
+          <p>Delete an async search.</p>
+          <p>If the asynchronous search is still running, it is cancelled.
+          Otherwise, the saved search results are deleted.
+          If the Elasticsearch security features are enabled, the deletion of a specific async search is restricted to: the authenticated user that submitted the original search request; users that have the <code>cancel_task</code> cluster privilege.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/async-search.html>`_
 
-        :param id: The async search ID
+        :param id: A unique identifier for the async search.
         """
         if id in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'id'")
-        __path = f"/_async_search/{_quote(id)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"id": _quote(id)}
+        __path = f'/_async_search/{__path_parts["id"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -56,40 +63,60 @@ class AsyncSearchClient(NamespacedClient):
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "DELETE", __path, params=__query, headers=__headers
+            "DELETE",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="async_search.delete",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     def get(
         self,
         *,
-        id: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        keep_alive: Optional[Any] = None,
-        pretty: Optional[bool] = None,
-        typed_keys: Optional[bool] = None,
-        wait_for_completion_timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        id: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        keep_alive: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+        typed_keys: t.Optional[bool] = None,
+        wait_for_completion_timeout: t.Optional[
+            t.Union[str, t.Literal[-1], t.Literal[0]]
+        ] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Retrieves the results of a previously submitted async search request given its
-        ID.
+        .. raw:: html
+
+          <p>Get async search results.</p>
+          <p>Retrieve the results of a previously submitted asynchronous search request.
+          If the Elasticsearch security features are enabled, access to the results of a specific async search is restricted to the user or API key that submitted it.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/async-search.html>`_
 
-        :param id: The async search ID
-        :param keep_alive: Specify the time interval in which the results (partial or
-            final) for this search will be available
+        :param id: A unique identifier for the async search.
+        :param keep_alive: Specifies how long the async search should be available in
+            the cluster. When not specified, the `keep_alive` set with the corresponding
+            submit async request will be used. Otherwise, it is possible to override
+            the value and extend the validity of the request. When this period expires,
+            the search, if still running, is cancelled. If the search is completed, its
+            saved results are deleted.
         :param typed_keys: Specify whether aggregation and suggester names should be
             prefixed by their respective types in the response
-        :param wait_for_completion_timeout: Specify the time that the request should
-            block waiting for the final response
+        :param wait_for_completion_timeout: Specifies to wait for the search to be completed
+            up until the provided timeout. Final results will be returned if available
+            before the timeout expires, otherwise the currently available results will
+            be returned once the timeout expires. By default no timeout is set meaning
+            that the currently available results will be returned without any additional
+            wait.
         """
         if id in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'id'")
-        __path = f"/_async_search/{_quote(id)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"id": _quote(id)}
+        __path = f'/_async_search/{__path_parts["id"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
@@ -106,46 +133,101 @@ class AsyncSearchClient(NamespacedClient):
             __query["wait_for_completion_timeout"] = wait_for_completion_timeout
         __headers = {"accept": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="async_search.get",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters()
     def status(
         self,
         *,
-        id: Any,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        id: str,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        keep_alive: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        pretty: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Retrieves the status of a previously submitted async search request given its
-        ID.
+        .. raw:: html
+
+          <p>Get the async search status.</p>
+          <p>Get the status of a previously submitted async search request given its identifier, without retrieving search results.
+          If the Elasticsearch security features are enabled, use of this API is restricted to the <code>monitoring_user</code> role.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/async-search.html>`_
 
-        :param id: The async search ID
+        :param id: A unique identifier for the async search.
+        :param keep_alive: Specifies how long the async search needs to be available.
+            Ongoing async searches and any saved search results are deleted after this
+            period.
         """
         if id in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'id'")
-        __path = f"/_async_search/status/{_quote(id)}"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"id": _quote(id)}
+        __path = f'/_async_search/status/{__path_parts["id"]}'
+        __query: t.Dict[str, t.Any] = {}
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if filter_path is not None:
             __query["filter_path"] = filter_path
         if human is not None:
             __query["human"] = human
+        if keep_alive is not None:
+            __query["keep_alive"] = keep_alive
         if pretty is not None:
             __query["pretty"] = pretty
         __headers = {"accept": "application/json"}
         return self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="async_search.status",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
-        body_fields=True,
+        body_fields=(
+            "aggregations",
+            "aggs",
+            "collapse",
+            "docvalue_fields",
+            "explain",
+            "ext",
+            "fields",
+            "from_",
+            "highlight",
+            "indices_boost",
+            "knn",
+            "min_score",
+            "pit",
+            "post_filter",
+            "profile",
+            "query",
+            "rescore",
+            "runtime_mappings",
+            "script_fields",
+            "search_after",
+            "seq_no_primary_term",
+            "size",
+            "slice",
+            "sort",
+            "source",
+            "stats",
+            "stored_fields",
+            "suggest",
+            "terminate_after",
+            "timeout",
+            "track_scores",
+            "track_total_hits",
+            "version",
+        ),
         parameter_aliases={
             "_source": "source",
             "_source_excludes": "source_excludes",
@@ -156,77 +238,108 @@ class AsyncSearchClient(NamespacedClient):
     def submit(
         self,
         *,
-        index: Optional[Any] = None,
-        aggregations: Optional[Dict[str, Any]] = None,
-        aggs: Optional[Dict[str, Any]] = None,
-        allow_no_indices: Optional[bool] = None,
-        allow_partial_search_results: Optional[bool] = None,
-        analyze_wildcard: Optional[bool] = None,
-        analyzer: Optional[str] = None,
-        batched_reduce_size: Optional[int] = None,
-        ccs_minimize_roundtrips: Optional[bool] = None,
-        collapse: Optional[Any] = None,
-        default_operator: Optional[Any] = None,
-        df: Optional[str] = None,
-        docvalue_fields: Optional[List[Any]] = None,
-        error_trace: Optional[bool] = None,
-        expand_wildcards: Optional[Any] = None,
-        explain: Optional[bool] = None,
-        fields: Optional[List[Any]] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        from_: Optional[int] = None,
-        highlight: Optional[Any] = None,
-        human: Optional[bool] = None,
-        ignore_throttled: Optional[bool] = None,
-        ignore_unavailable: Optional[bool] = None,
-        indices_boost: Optional[List[Dict[Any, float]]] = None,
-        keep_alive: Optional[Any] = None,
-        keep_on_completion: Optional[bool] = None,
-        lenient: Optional[bool] = None,
-        max_concurrent_shard_requests: Optional[int] = None,
-        min_compatible_shard_node: Optional[Any] = None,
-        min_score: Optional[float] = None,
-        pit: Optional[Any] = None,
-        post_filter: Optional[Any] = None,
-        pre_filter_shard_size: Optional[int] = None,
-        preference: Optional[str] = None,
-        pretty: Optional[bool] = None,
-        profile: Optional[bool] = None,
-        q: Optional[str] = None,
-        query: Optional[Any] = None,
-        request_cache: Optional[bool] = None,
-        rescore: Optional[Union[Any, List[Any]]] = None,
-        rest_total_hits_as_int: Optional[bool] = None,
-        routing: Optional[Any] = None,
-        runtime_mappings: Optional[Any] = None,
-        script_fields: Optional[Dict[str, Any]] = None,
-        scroll: Optional[Any] = None,
-        search_after: Optional[Any] = None,
-        search_type: Optional[Any] = None,
-        seq_no_primary_term: Optional[bool] = None,
-        size: Optional[int] = None,
-        slice: Optional[Any] = None,
-        sort: Optional[Any] = None,
-        source: Optional[Any] = None,
-        source_excludes: Optional[Any] = None,
-        source_includes: Optional[Any] = None,
-        stats: Optional[List[str]] = None,
-        stored_fields: Optional[Any] = None,
-        suggest: Optional[Any] = None,
-        suggest_field: Optional[Any] = None,
-        suggest_mode: Optional[Any] = None,
-        suggest_size: Optional[int] = None,
-        suggest_text: Optional[str] = None,
-        terminate_after: Optional[int] = None,
-        timeout: Optional[str] = None,
-        track_scores: Optional[bool] = None,
-        track_total_hits: Optional[Any] = None,
-        typed_keys: Optional[bool] = None,
-        version: Optional[bool] = None,
-        wait_for_completion_timeout: Optional[Any] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        aggregations: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        aggs: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        allow_no_indices: t.Optional[bool] = None,
+        allow_partial_search_results: t.Optional[bool] = None,
+        analyze_wildcard: t.Optional[bool] = None,
+        analyzer: t.Optional[str] = None,
+        batched_reduce_size: t.Optional[int] = None,
+        ccs_minimize_roundtrips: t.Optional[bool] = None,
+        collapse: t.Optional[t.Mapping[str, t.Any]] = None,
+        default_operator: t.Optional[t.Union[str, t.Literal["and", "or"]]] = None,
+        df: t.Optional[str] = None,
+        docvalue_fields: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        error_trace: t.Optional[bool] = None,
+        expand_wildcards: t.Optional[
+            t.Union[
+                t.Sequence[
+                    t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]]
+                ],
+                t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]],
+            ]
+        ] = None,
+        explain: t.Optional[bool] = None,
+        ext: t.Optional[t.Mapping[str, t.Any]] = None,
+        fields: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        from_: t.Optional[int] = None,
+        highlight: t.Optional[t.Mapping[str, t.Any]] = None,
+        human: t.Optional[bool] = None,
+        ignore_throttled: t.Optional[bool] = None,
+        ignore_unavailable: t.Optional[bool] = None,
+        indices_boost: t.Optional[t.Sequence[t.Mapping[str, float]]] = None,
+        keep_alive: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        keep_on_completion: t.Optional[bool] = None,
+        knn: t.Optional[
+            t.Union[t.Mapping[str, t.Any], t.Sequence[t.Mapping[str, t.Any]]]
+        ] = None,
+        lenient: t.Optional[bool] = None,
+        max_concurrent_shard_requests: t.Optional[int] = None,
+        min_score: t.Optional[float] = None,
+        pit: t.Optional[t.Mapping[str, t.Any]] = None,
+        post_filter: t.Optional[t.Mapping[str, t.Any]] = None,
+        preference: t.Optional[str] = None,
+        pretty: t.Optional[bool] = None,
+        profile: t.Optional[bool] = None,
+        q: t.Optional[str] = None,
+        query: t.Optional[t.Mapping[str, t.Any]] = None,
+        request_cache: t.Optional[bool] = None,
+        rescore: t.Optional[
+            t.Union[t.Mapping[str, t.Any], t.Sequence[t.Mapping[str, t.Any]]]
+        ] = None,
+        rest_total_hits_as_int: t.Optional[bool] = None,
+        routing: t.Optional[str] = None,
+        runtime_mappings: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        script_fields: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        search_after: t.Optional[
+            t.Sequence[t.Union[None, bool, float, int, str, t.Any]]
+        ] = None,
+        search_type: t.Optional[
+            t.Union[str, t.Literal["dfs_query_then_fetch", "query_then_fetch"]]
+        ] = None,
+        seq_no_primary_term: t.Optional[bool] = None,
+        size: t.Optional[int] = None,
+        slice: t.Optional[t.Mapping[str, t.Any]] = None,
+        sort: t.Optional[
+            t.Union[
+                t.Sequence[t.Union[str, t.Mapping[str, t.Any]]],
+                t.Union[str, t.Mapping[str, t.Any]],
+            ]
+        ] = None,
+        source: t.Optional[t.Union[bool, t.Mapping[str, t.Any]]] = None,
+        source_excludes: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        source_includes: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        stats: t.Optional[t.Sequence[str]] = None,
+        stored_fields: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        suggest: t.Optional[t.Mapping[str, t.Any]] = None,
+        suggest_field: t.Optional[str] = None,
+        suggest_mode: t.Optional[
+            t.Union[str, t.Literal["always", "missing", "popular"]]
+        ] = None,
+        suggest_size: t.Optional[int] = None,
+        suggest_text: t.Optional[str] = None,
+        terminate_after: t.Optional[int] = None,
+        timeout: t.Optional[str] = None,
+        track_scores: t.Optional[bool] = None,
+        track_total_hits: t.Optional[t.Union[bool, int]] = None,
+        typed_keys: t.Optional[bool] = None,
+        version: t.Optional[bool] = None,
+        wait_for_completion_timeout: t.Optional[
+            t.Union[str, t.Literal[-1], t.Literal[0]]
+        ] = None,
+        body: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Executes a search request asynchronously.
+        .. raw:: html
+
+          <p>Run an async search.</p>
+          <p>When the primary sort of the results is an indexed field, shards get sorted based on minimum and maximum value that they hold for that field. Partial results become available following the sort criteria that was requested.</p>
+          <p>Warning: Asynchronous search does not support scroll or search requests that include only the suggest section.</p>
+          <p>By default, Elasticsearch does not allow you to store an async search response larger than 10Mb and an attempt to do this results in an error.
+          The maximum allowed size for a stored async search response can be set by changing the <code>search.max_async_search_response_size</code> cluster level setting.</p>
+
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/master/async-search.html>`_
 
@@ -242,10 +355,11 @@ class AsyncSearchClient(NamespacedClient):
         :param analyze_wildcard: Specify whether wildcard and prefix queries should be
             analyzed (default: false)
         :param analyzer: The analyzer to use for the query string
-        :param batched_reduce_size: The number of shard results that should be reduced
-            at once on the coordinating node. This value should be used as the granularity
-            at which progress results will be made available.
-        :param ccs_minimize_roundtrips:
+        :param batched_reduce_size: Affects how often partial results become available,
+            which happens whenever shard results are reduced. A partial reduction is
+            performed every time the coordinating node has received a certain number
+            of new shard responses (5 by default).
+        :param ccs_minimize_roundtrips: The default value is the only supported value.
         :param collapse:
         :param default_operator: The default operator for query string query (AND or
             OR)
@@ -258,6 +372,7 @@ class AsyncSearchClient(NamespacedClient):
             that are open, closed or both.
         :param explain: If true, returns detailed information about score computation
             as part of a hit.
+        :param ext: Configuration of search extensions defined by Elasticsearch plugins.
         :param fields: Array of wildcard (*) patterns. The request returns values for
             field names matching these patterns in the hits.fields property of the response.
         :param from_: Starting document offset. By default, you cannot page through more
@@ -269,24 +384,23 @@ class AsyncSearchClient(NamespacedClient):
         :param ignore_unavailable: Whether specified concrete indices should be ignored
             when unavailable (missing or closed)
         :param indices_boost: Boosts the _score of documents from specified indices.
-        :param keep_alive: Update the time interval in which the results (partial or
-            final) for this search will be available
-        :param keep_on_completion: Control whether the response should be stored in the
-            cluster if it completed within the provided [wait_for_completion] time (default:
-            false)
+        :param keep_alive: Specifies how long the async search needs to be available.
+            Ongoing async searches and any saved search results are deleted after this
+            period.
+        :param keep_on_completion: If `true`, results are stored for later retrieval
+            when the search completes within the `wait_for_completion_timeout`.
+        :param knn: Defines the approximate kNN search to run.
         :param lenient: Specify whether format-based query failures (such as providing
             text to a numeric field) should be ignored
         :param max_concurrent_shard_requests: The number of concurrent shard requests
             per node this search executes concurrently. This value should be used to
             limit the impact of the search on the cluster in order to limit the number
             of concurrent shard requests
-        :param min_compatible_shard_node:
         :param min_score: Minimum _score for matching documents. Documents with a lower
             _score are not included in the search results.
         :param pit: Limits the search to a point in time (PIT). If you provide a PIT,
             you cannot specify an <index> in the request path.
         :param post_filter:
-        :param pre_filter_shard_size:
         :param preference: Specify the node or shard the operation should be performed
             on (default: random)
         :param profile:
@@ -295,13 +409,13 @@ class AsyncSearchClient(NamespacedClient):
         :param request_cache: Specify if request cache should be used for this request
             or not, defaults to true
         :param rescore:
-        :param rest_total_hits_as_int:
+        :param rest_total_hits_as_int: Indicates whether hits.total should be rendered
+            as an integer or an object in the rest search response
         :param routing: A comma-separated list of specific routing values
         :param runtime_mappings: Defines one or more runtime fields in the search request.
             These fields take precedence over mapped fields with the same name.
         :param script_fields: Retrieve a script evaluation (based on different fields)
             for each hit.
-        :param scroll:
         :param search_after:
         :param search_type: Search operation type
         :param seq_no_primary_term: If true, returns sequence number and primary term
@@ -346,19 +460,30 @@ class AsyncSearchClient(NamespacedClient):
         :param typed_keys: Specify whether aggregation and suggester names should be
             prefixed by their respective types in the response
         :param version: If true, returns document version as part of a hit.
-        :param wait_for_completion_timeout: Specify the time that the request should
-            block waiting for the final response
+        :param wait_for_completion_timeout: Blocks and waits until the search is completed
+            up to a certain timeout. When the async search completes within the timeout,
+            the response won’t include the ID as the results are not stored in the cluster.
         """
+        __path_parts: t.Dict[str, str]
         if index not in SKIP_IN_PATH:
-            __path = f"/{_quote(index)}/_async_search"
+            __path_parts = {"index": _quote(index)}
+            __path = f'/{__path_parts["index"]}/_async_search'
         else:
+            __path_parts = {}
             __path = "/_async_search"
-        __body: Dict[str, Any] = {}
-        __query: Dict[str, Any] = {}
-        if aggregations is not None:
-            __body["aggregations"] = aggregations
-        if aggs is not None:
-            __body["aggs"] = aggs
+        __query: t.Dict[str, t.Any] = {}
+        __body: t.Dict[str, t.Any] = body if body is not None else {}
+        # The 'sort' parameter with a colon can't be encoded to the body.
+        if sort is not None and (
+            (isinstance(sort, str) and ":" in sort)
+            or (
+                isinstance(sort, (list, tuple))
+                and all(isinstance(_x, str) for _x in sort)
+                and any(":" in _x for _x in sort)
+            )
+        ):
+            __query["sort"] = sort
+            sort = None
         if allow_no_indices is not None:
             __query["allow_no_indices"] = allow_no_indices
         if allow_partial_search_results is not None:
@@ -371,36 +496,22 @@ class AsyncSearchClient(NamespacedClient):
             __query["batched_reduce_size"] = batched_reduce_size
         if ccs_minimize_roundtrips is not None:
             __query["ccs_minimize_roundtrips"] = ccs_minimize_roundtrips
-        if collapse is not None:
-            __body["collapse"] = collapse
         if default_operator is not None:
             __query["default_operator"] = default_operator
         if df is not None:
             __query["df"] = df
-        if docvalue_fields is not None:
-            __body["docvalue_fields"] = docvalue_fields
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if expand_wildcards is not None:
             __query["expand_wildcards"] = expand_wildcards
-        if explain is not None:
-            __body["explain"] = explain
-        if fields is not None:
-            __body["fields"] = fields
         if filter_path is not None:
             __query["filter_path"] = filter_path
-        if from_ is not None:
-            __body["from"] = from_
-        if highlight is not None:
-            __body["highlight"] = highlight
         if human is not None:
             __query["human"] = human
         if ignore_throttled is not None:
             __query["ignore_throttled"] = ignore_throttled
         if ignore_unavailable is not None:
             __query["ignore_unavailable"] = ignore_unavailable
-        if indices_boost is not None:
-            __body["indices_boost"] = indices_boost
         if keep_alive is not None:
             __query["keep_alive"] = keep_alive
         if keep_on_completion is not None:
@@ -409,64 +520,24 @@ class AsyncSearchClient(NamespacedClient):
             __query["lenient"] = lenient
         if max_concurrent_shard_requests is not None:
             __query["max_concurrent_shard_requests"] = max_concurrent_shard_requests
-        if min_compatible_shard_node is not None:
-            __query["min_compatible_shard_node"] = min_compatible_shard_node
-        if min_score is not None:
-            __body["min_score"] = min_score
-        if pit is not None:
-            __body["pit"] = pit
-        if post_filter is not None:
-            __body["post_filter"] = post_filter
-        if pre_filter_shard_size is not None:
-            __query["pre_filter_shard_size"] = pre_filter_shard_size
         if preference is not None:
             __query["preference"] = preference
         if pretty is not None:
             __query["pretty"] = pretty
-        if profile is not None:
-            __body["profile"] = profile
         if q is not None:
             __query["q"] = q
-        if query is not None:
-            __body["query"] = query
         if request_cache is not None:
             __query["request_cache"] = request_cache
-        if rescore is not None:
-            __body["rescore"] = rescore
         if rest_total_hits_as_int is not None:
             __query["rest_total_hits_as_int"] = rest_total_hits_as_int
         if routing is not None:
             __query["routing"] = routing
-        if runtime_mappings is not None:
-            __body["runtime_mappings"] = runtime_mappings
-        if script_fields is not None:
-            __body["script_fields"] = script_fields
-        if scroll is not None:
-            __query["scroll"] = scroll
-        if search_after is not None:
-            __body["search_after"] = search_after
         if search_type is not None:
             __query["search_type"] = search_type
-        if seq_no_primary_term is not None:
-            __body["seq_no_primary_term"] = seq_no_primary_term
-        if size is not None:
-            __body["size"] = size
-        if slice is not None:
-            __body["slice"] = slice
-        if sort is not None:
-            __body["sort"] = sort
-        if source is not None:
-            __body["_source"] = source
         if source_excludes is not None:
             __query["_source_excludes"] = source_excludes
         if source_includes is not None:
             __query["_source_includes"] = source_includes
-        if stats is not None:
-            __body["stats"] = stats
-        if stored_fields is not None:
-            __body["stored_fields"] = stored_fields
-        if suggest is not None:
-            __body["suggest"] = suggest
         if suggest_field is not None:
             __query["suggest_field"] = suggest_field
         if suggest_mode is not None:
@@ -475,25 +546,88 @@ class AsyncSearchClient(NamespacedClient):
             __query["suggest_size"] = suggest_size
         if suggest_text is not None:
             __query["suggest_text"] = suggest_text
-        if terminate_after is not None:
-            __body["terminate_after"] = terminate_after
-        if timeout is not None:
-            __body["timeout"] = timeout
-        if track_scores is not None:
-            __body["track_scores"] = track_scores
-        if track_total_hits is not None:
-            __body["track_total_hits"] = track_total_hits
         if typed_keys is not None:
             __query["typed_keys"] = typed_keys
-        if version is not None:
-            __body["version"] = version
         if wait_for_completion_timeout is not None:
             __query["wait_for_completion_timeout"] = wait_for_completion_timeout
+        if not __body:
+            if aggregations is not None:
+                __body["aggregations"] = aggregations
+            if aggs is not None:
+                __body["aggs"] = aggs
+            if collapse is not None:
+                __body["collapse"] = collapse
+            if docvalue_fields is not None:
+                __body["docvalue_fields"] = docvalue_fields
+            if explain is not None:
+                __body["explain"] = explain
+            if ext is not None:
+                __body["ext"] = ext
+            if fields is not None:
+                __body["fields"] = fields
+            if from_ is not None:
+                __body["from"] = from_
+            if highlight is not None:
+                __body["highlight"] = highlight
+            if indices_boost is not None:
+                __body["indices_boost"] = indices_boost
+            if knn is not None:
+                __body["knn"] = knn
+            if min_score is not None:
+                __body["min_score"] = min_score
+            if pit is not None:
+                __body["pit"] = pit
+            if post_filter is not None:
+                __body["post_filter"] = post_filter
+            if profile is not None:
+                __body["profile"] = profile
+            if query is not None:
+                __body["query"] = query
+            if rescore is not None:
+                __body["rescore"] = rescore
+            if runtime_mappings is not None:
+                __body["runtime_mappings"] = runtime_mappings
+            if script_fields is not None:
+                __body["script_fields"] = script_fields
+            if search_after is not None:
+                __body["search_after"] = search_after
+            if seq_no_primary_term is not None:
+                __body["seq_no_primary_term"] = seq_no_primary_term
+            if size is not None:
+                __body["size"] = size
+            if slice is not None:
+                __body["slice"] = slice
+            if sort is not None:
+                __body["sort"] = sort
+            if source is not None:
+                __body["_source"] = source
+            if stats is not None:
+                __body["stats"] = stats
+            if stored_fields is not None:
+                __body["stored_fields"] = stored_fields
+            if suggest is not None:
+                __body["suggest"] = suggest
+            if terminate_after is not None:
+                __body["terminate_after"] = terminate_after
+            if timeout is not None:
+                __body["timeout"] = timeout
+            if track_scores is not None:
+                __body["track_scores"] = track_scores
+            if track_total_hits is not None:
+                __body["track_total_hits"] = track_total_hits
+            if version is not None:
+                __body["version"] = version
         if not __body:
             __body = None  # type: ignore[assignment]
         __headers = {"accept": "application/json"}
         if __body is not None:
             __headers["content-type"] = "application/json"
         return self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers, body=__body
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="async_search.submit",
+            path_parts=__path_parts,
         )

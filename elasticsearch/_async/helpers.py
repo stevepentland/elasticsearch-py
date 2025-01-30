@@ -108,7 +108,7 @@ async def _process_bulk_chunk(
 
     try:
         # send the actual request
-        resp = await client.bulk(*args, operations=bulk_actions, **kwargs)
+        resp = await client.bulk(*args, operations=bulk_actions, **kwargs)  # type: ignore[arg-type]
     except ApiError as e:
         gen = _process_bulk_chunk_error(
             error=e,
@@ -133,11 +133,11 @@ def aiter(x: Union[Iterable[T], AsyncIterable[T]]) -> AsyncIterator[T]:
     if hasattr(x, "__anext__"):
         return x  # type: ignore[return-value]
     elif hasattr(x, "__aiter__"):
-        return x.__aiter__()  # type: ignore[union-attr]
+        return x.__aiter__()
 
     async def f() -> AsyncIterable[T]:
         nonlocal x
-        ix: Iterable[T] = x  # type: ignore[assignment]
+        ix: Iterable[T] = x
         for item in ix:
             yield item
 
@@ -173,10 +173,10 @@ async def async_streaming_bulk(
     max_backoff: float = 600,
     yield_ok: bool = True,
     ignore_status: Union[int, Collection[int]] = (),
+    retry_on_status: Union[int, Collection[int]] = (429,),
     *args: Any,
     **kwargs: Any,
 ) -> AsyncIterable[Tuple[bool, Dict[str, Any]]]:
-
     """
     Streaming bulk consumes actions from the iterable passed in and yields
     results per action. For non-streaming usecases use
@@ -185,10 +185,11 @@ async def async_streaming_bulk(
     entire input is consumed and sent.
 
     If you specify ``max_retries`` it will also retry any documents that were
-    rejected with a ``429`` status code. To do this it will wait (**by calling
-    asyncio.sleep**) for ``initial_backoff`` seconds and then,
-    every subsequent rejection for the same chunk, for double the time every
-    time up to ``max_backoff`` seconds.
+    rejected with a ``429`` status code. Use ``retry_on_status`` to
+    configure which status codes will be retried. To do this it will wait
+    (**by calling asyncio.sleep which will block**) for ``initial_backoff`` seconds
+    and then, every subsequent rejection for the same chunk, for double the time
+    every time up to ``max_backoff`` seconds.
 
     :arg client: instance of :class:`~elasticsearch.AsyncElasticsearch` to use
     :arg actions: iterable or async iterable containing the actions to be executed
@@ -201,8 +202,11 @@ async def async_streaming_bulk(
     :arg expand_action_callback: callback executed on each action passed in,
         should return a tuple containing the action line and the data line
         (`None` if data line should be omitted).
+    :arg retry_on_status: HTTP status code that will trigger a retry.
+        (if `None` is specified only status 429 will retry).
     :arg max_retries: maximum number of times a document will be retried when
-        ``429`` is received, set to 0 (default) for no retries on ``429``
+        retry_on_status (defaulting to ``429``) is received,
+        set to 0 (default) for no retries
     :arg initial_backoff: number of seconds we should wait before the first
         retry. Any subsequent retries will be powers of ``initial_backoff *
         2**retry_number``
@@ -213,6 +217,9 @@ async def async_streaming_bulk(
 
     client = client.options()
     client._client_meta = (("h", "bp"),)
+
+    if isinstance(retry_on_status, int):
+        retry_on_status = (retry_on_status,)
 
     async def map_actions() -> AsyncIterable[_TYPE_BULK_ACTION_HEADER_AND_BODY]:
         async for item in aiter(actions):
@@ -230,7 +237,6 @@ async def async_streaming_bulk(
     async for bulk_data, bulk_actions in _chunk_actions(
         map_actions(), chunk_size, max_chunk_bytes, serializer
     ):
-
         for attempt in range(max_retries + 1):
             to_retry: List[bytes] = []
             to_retry_data: List[
@@ -251,7 +257,7 @@ async def async_streaming_bulk(
                 ]
                 ok: bool
                 info: Dict[str, Any]
-                async for data, (ok, info) in azip(  # type: ignore
+                async for data, (ok, info) in azip(  # type: ignore[assignment, misc]
                     bulk_data,
                     _process_bulk_chunk(
                         client,
@@ -264,14 +270,13 @@ async def async_streaming_bulk(
                         **kwargs,
                     ),
                 ):
-
                     if not ok:
                         action, info = info.popitem()
-                        # retry if retries enabled, we get 429, and we are not
-                        # in the last attempt
+                        # retry if retries enabled, we are not in the last attempt,
+                        # and status in retry_on_status (defaulting to 429)
                         if (
                             max_retries
-                            and info["status"] == 429
+                            and info["status"] in retry_on_status
                             and (attempt + 1) <= max_retries
                         ):
                             # _process_bulk_chunk expects strings so we need to
@@ -284,8 +289,9 @@ async def async_streaming_bulk(
                         yield ok, info
 
             except ApiError as e:
-                # suppress 429 errors since we will retry them
-                if attempt == max_retries or e.status_code != 429:
+                # suppress any status in retry_on_status (429 by default)
+                # since we will retry them
+                if attempt == max_retries or e.status_code not in retry_on_status:
                     raise
             else:
                 if not to_retry:
@@ -398,7 +404,7 @@ async def async_scan(
     .. code-block:: python
 
         async_scan(
-            es,
+            client,
             query={"query": {"match": {"title": "python"}}},
             index="orders-*"
         )
@@ -428,8 +434,16 @@ async def async_scan(
     )
     client._client_meta = (("h", "s"),)
 
+    # Setting query={"from": ...} would make 'from' be used
+    # as a keyword argument instead of 'from_'. We handle that here.
+    def normalize_from_keyword(kw: MutableMapping[str, Any]) -> None:
+        if "from" in kw:
+            kw["from_"] = kw.pop("from")
+
+    normalize_from_keyword(kwargs)
     try:
         search_kwargs = query.copy() if query else {}
+        normalize_from_keyword(search_kwargs)
         search_kwargs.update(kwargs)
         search_kwargs["scroll"] = scroll
         search_kwargs["size"] = size
@@ -440,7 +454,7 @@ async def async_scan(
         search_kwargs = kwargs.copy()
         search_kwargs["scroll"] = scroll
         search_kwargs["size"] = size
-        resp = await client.search(body=query, **search_kwargs)  # type: ignore[call-arg]
+        resp = await client.search(body=query, **search_kwargs)
 
     scroll_id: Optional[str] = resp.get("_scroll_id")
     scroll_transport_kwargs = pop_transport_kwargs(scroll_kwargs)
@@ -501,7 +515,6 @@ async def async_reindex(
     scan_kwargs: MutableMapping[str, Any] = {},
     bulk_kwargs: MutableMapping[str, Any] = {},
 ) -> Tuple[int, Union[int, List[Any]]]:
-
     """
     Reindex all documents from one index that satisfy a given query
     to another, potentially (if `target_client` is specified) on a different cluster.

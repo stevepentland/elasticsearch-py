@@ -15,34 +15,45 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Any, Dict, List, Optional, Union
+import typing as t
 
 from elastic_transport import ObjectApiResponse
 
 from ._base import NamespacedClient
-from .utils import SKIP_IN_PATH, _quote, _rewrite_parameters
+from .utils import (
+    SKIP_IN_PATH,
+    Stability,
+    _quote,
+    _rewrite_parameters,
+    _stability_warning,
+)
 
 
 class FleetClient(NamespacedClient):
+
     @_rewrite_parameters()
     async def global_checkpoints(
         self,
         *,
-        index: Any,
-        checkpoints: Optional[List[Any]] = None,
-        error_trace: Optional[bool] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        pretty: Optional[bool] = None,
-        timeout: Optional[Any] = None,
-        wait_for_advance: Optional[bool] = None,
-        wait_for_index: Optional[bool] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: str,
+        checkpoints: t.Optional[t.Sequence[int]] = None,
+        error_trace: t.Optional[bool] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        pretty: t.Optional[bool] = None,
+        timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        wait_for_advance: t.Optional[bool] = None,
+        wait_for_index: t.Optional[bool] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Returns the current global checkpoints for an index. This API is design for internal
-        use by the fleet server project.
+        .. raw:: html
 
-        `<https://www.elastic.co/guide/en/elasticsearch/reference/current/get-global-checkpoints.html>`_
+          <p>Get global checkpoints.
+          Get the current global checkpoints for an index.
+          This API is designed for internal use by the Fleet server project.</p>
+
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/master/get-global-checkpoints.html>`_
 
         :param index: A single index or index alias that resolves to a single index.
         :param checkpoints: A comma separated list of previous global checkpoints. When
@@ -58,8 +69,9 @@ class FleetClient(NamespacedClient):
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        __path = f"/{_quote(index)}/_fleet/global_checkpoints"
-        __query: Dict[str, Any] = {}
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/{__path_parts["index"]}/_fleet/global_checkpoints'
+        __query: t.Dict[str, t.Any] = {}
         if checkpoints is not None:
             __query["checkpoints"] = checkpoints
         if error_trace is not None:
@@ -78,43 +90,63 @@ class FleetClient(NamespacedClient):
             __query["wait_for_index"] = wait_for_index
         __headers = {"accept": "application/json"}
         return await self.perform_request(  # type: ignore[return-value]
-            "GET", __path, params=__query, headers=__headers
+            "GET",
+            __path,
+            params=__query,
+            headers=__headers,
+            endpoint_id="fleet.global_checkpoints",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
         body_name="searches",
     )
+    @_stability_warning(Stability.EXPERIMENTAL)
     async def msearch(
         self,
         *,
-        index: Any,
-        searches: List[Any],
-        allow_no_indices: Optional[bool] = None,
-        allow_partial_search_results: Optional[bool] = None,
-        ccs_minimize_roundtrips: Optional[bool] = None,
-        error_trace: Optional[bool] = None,
-        expand_wildcards: Optional[Any] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        human: Optional[bool] = None,
-        ignore_throttled: Optional[bool] = None,
-        ignore_unavailable: Optional[bool] = None,
-        max_concurrent_searches: Optional[int] = None,
-        max_concurrent_shard_requests: Optional[int] = None,
-        pre_filter_shard_size: Optional[int] = None,
-        pretty: Optional[bool] = None,
-        rest_total_hits_as_int: Optional[bool] = None,
-        search_type: Optional[Any] = None,
-        typed_keys: Optional[bool] = None,
-        wait_for_checkpoints: Optional[List[Any]] = None,
-    ) -> ObjectApiResponse[Any]:
+        searches: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        body: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        index: t.Optional[str] = None,
+        allow_no_indices: t.Optional[bool] = None,
+        allow_partial_search_results: t.Optional[bool] = None,
+        ccs_minimize_roundtrips: t.Optional[bool] = None,
+        error_trace: t.Optional[bool] = None,
+        expand_wildcards: t.Optional[
+            t.Union[
+                t.Sequence[
+                    t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]]
+                ],
+                t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]],
+            ]
+        ] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        human: t.Optional[bool] = None,
+        ignore_throttled: t.Optional[bool] = None,
+        ignore_unavailable: t.Optional[bool] = None,
+        max_concurrent_searches: t.Optional[int] = None,
+        max_concurrent_shard_requests: t.Optional[int] = None,
+        pre_filter_shard_size: t.Optional[int] = None,
+        pretty: t.Optional[bool] = None,
+        rest_total_hits_as_int: t.Optional[bool] = None,
+        search_type: t.Optional[
+            t.Union[str, t.Literal["dfs_query_then_fetch", "query_then_fetch"]]
+        ] = None,
+        typed_keys: t.Optional[bool] = None,
+        wait_for_checkpoints: t.Optional[t.Sequence[int]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Multi Search API where the search will only be executed after specified checkpoints
-        are available due to a refresh. This API is designed for internal use by the
-        fleet server project.
+        .. raw:: html
 
+          <p>Run multiple Fleet searches.
+          Run several Fleet searches with a single API request.
+          The API follows the same structure as the multi search API.
+          However, similar to the Fleet search API, it supports the <code>wait_for_checkpoints</code> parameter.</p>
+
+
+        :param searches:
         :param index: A single target to search. If the target is an index alias, it
             must resolve to a single index.
-        :param searches:
         :param allow_no_indices: If false, the request returns an error if any wildcard
             expression, index alias, or _all value targets only missing or closed indices.
             This behavior applies even if the request targets other open indices. For
@@ -154,15 +186,20 @@ class FleetClient(NamespacedClient):
             has become visible for search. Defaults to an empty list which will cause
             Elasticsearch to immediately execute the search.
         """
-        if index in SKIP_IN_PATH:
-            raise ValueError("Empty value passed for parameter 'index'")
-        if searches is None:
-            raise ValueError("Empty value passed for parameter 'searches'")
+        if searches is None and body is None:
+            raise ValueError(
+                "Empty value passed for parameters 'searches' and 'body', one of them should be set."
+            )
+        elif searches is not None and body is not None:
+            raise ValueError("Cannot set both 'searches' and 'body'")
+        __path_parts: t.Dict[str, str]
         if index not in SKIP_IN_PATH:
-            __path = f"/{_quote(index)}/_fleet/_fleet_msearch"
+            __path_parts = {"index": _quote(index)}
+            __path = f'/{__path_parts["index"]}/_fleet/_fleet_msearch'
         else:
+            __path_parts = {}
             __path = "/_fleet/_fleet_msearch"
-        __query: Dict[str, Any] = {}
+        __query: t.Dict[str, t.Any] = {}
         if allow_no_indices is not None:
             __query["allow_no_indices"] = allow_no_indices
         if allow_partial_search_results is not None:
@@ -197,17 +234,56 @@ class FleetClient(NamespacedClient):
             __query["typed_keys"] = typed_keys
         if wait_for_checkpoints is not None:
             __query["wait_for_checkpoints"] = wait_for_checkpoints
-        __body = searches
+        __body = searches if searches is not None else body
         __headers = {
             "accept": "application/json",
             "content-type": "application/x-ndjson",
         }
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers, body=__body
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="fleet.msearch",
+            path_parts=__path_parts,
         )
 
     @_rewrite_parameters(
-        body_fields=True,
+        body_fields=(
+            "aggregations",
+            "aggs",
+            "collapse",
+            "docvalue_fields",
+            "explain",
+            "ext",
+            "fields",
+            "from_",
+            "highlight",
+            "indices_boost",
+            "min_score",
+            "pit",
+            "post_filter",
+            "profile",
+            "query",
+            "rescore",
+            "runtime_mappings",
+            "script_fields",
+            "search_after",
+            "seq_no_primary_term",
+            "size",
+            "slice",
+            "sort",
+            "source",
+            "stats",
+            "stored_fields",
+            "suggest",
+            "terminate_after",
+            "timeout",
+            "track_scores",
+            "track_total_hits",
+            "version",
+        ),
         parameter_aliases={
             "_source": "source",
             "_source_excludes": "source_excludes",
@@ -215,80 +291,105 @@ class FleetClient(NamespacedClient):
             "from": "from_",
         },
     )
+    @_stability_warning(Stability.EXPERIMENTAL)
     async def search(
         self,
         *,
-        index: Any,
-        aggregations: Optional[Dict[str, Any]] = None,
-        aggs: Optional[Dict[str, Any]] = None,
-        allow_no_indices: Optional[bool] = None,
-        allow_partial_search_results: Optional[bool] = None,
-        analyze_wildcard: Optional[bool] = None,
-        analyzer: Optional[str] = None,
-        batched_reduce_size: Optional[int] = None,
-        ccs_minimize_roundtrips: Optional[bool] = None,
-        collapse: Optional[Any] = None,
-        default_operator: Optional[Any] = None,
-        df: Optional[str] = None,
-        docvalue_fields: Optional[List[Any]] = None,
-        error_trace: Optional[bool] = None,
-        expand_wildcards: Optional[Any] = None,
-        explain: Optional[bool] = None,
-        fields: Optional[List[Any]] = None,
-        filter_path: Optional[Union[List[str], str]] = None,
-        from_: Optional[int] = None,
-        highlight: Optional[Any] = None,
-        human: Optional[bool] = None,
-        ignore_throttled: Optional[bool] = None,
-        ignore_unavailable: Optional[bool] = None,
-        indices_boost: Optional[List[Dict[Any, float]]] = None,
-        lenient: Optional[bool] = None,
-        max_concurrent_shard_requests: Optional[int] = None,
-        min_compatible_shard_node: Optional[Any] = None,
-        min_score: Optional[float] = None,
-        pit: Optional[Any] = None,
-        post_filter: Optional[Any] = None,
-        pre_filter_shard_size: Optional[int] = None,
-        preference: Optional[str] = None,
-        pretty: Optional[bool] = None,
-        profile: Optional[bool] = None,
-        q: Optional[str] = None,
-        query: Optional[Any] = None,
-        request_cache: Optional[bool] = None,
-        rescore: Optional[Union[Any, List[Any]]] = None,
-        rest_total_hits_as_int: Optional[bool] = None,
-        routing: Optional[Any] = None,
-        runtime_mappings: Optional[Any] = None,
-        script_fields: Optional[Dict[str, Any]] = None,
-        scroll: Optional[Any] = None,
-        search_after: Optional[Any] = None,
-        search_type: Optional[Any] = None,
-        seq_no_primary_term: Optional[bool] = None,
-        size: Optional[int] = None,
-        slice: Optional[Any] = None,
-        sort: Optional[Any] = None,
-        source: Optional[Any] = None,
-        source_excludes: Optional[Any] = None,
-        source_includes: Optional[Any] = None,
-        stats: Optional[List[str]] = None,
-        stored_fields: Optional[Any] = None,
-        suggest: Optional[Any] = None,
-        suggest_field: Optional[Any] = None,
-        suggest_mode: Optional[Any] = None,
-        suggest_size: Optional[int] = None,
-        suggest_text: Optional[str] = None,
-        terminate_after: Optional[int] = None,
-        timeout: Optional[str] = None,
-        track_scores: Optional[bool] = None,
-        track_total_hits: Optional[Any] = None,
-        typed_keys: Optional[bool] = None,
-        version: Optional[bool] = None,
-        wait_for_checkpoints: Optional[List[Any]] = None,
-    ) -> ObjectApiResponse[Any]:
+        index: str,
+        aggregations: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        aggs: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        allow_no_indices: t.Optional[bool] = None,
+        allow_partial_search_results: t.Optional[bool] = None,
+        analyze_wildcard: t.Optional[bool] = None,
+        analyzer: t.Optional[str] = None,
+        batched_reduce_size: t.Optional[int] = None,
+        ccs_minimize_roundtrips: t.Optional[bool] = None,
+        collapse: t.Optional[t.Mapping[str, t.Any]] = None,
+        default_operator: t.Optional[t.Union[str, t.Literal["and", "or"]]] = None,
+        df: t.Optional[str] = None,
+        docvalue_fields: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        error_trace: t.Optional[bool] = None,
+        expand_wildcards: t.Optional[
+            t.Union[
+                t.Sequence[
+                    t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]]
+                ],
+                t.Union[str, t.Literal["all", "closed", "hidden", "none", "open"]],
+            ]
+        ] = None,
+        explain: t.Optional[bool] = None,
+        ext: t.Optional[t.Mapping[str, t.Any]] = None,
+        fields: t.Optional[t.Sequence[t.Mapping[str, t.Any]]] = None,
+        filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        from_: t.Optional[int] = None,
+        highlight: t.Optional[t.Mapping[str, t.Any]] = None,
+        human: t.Optional[bool] = None,
+        ignore_throttled: t.Optional[bool] = None,
+        ignore_unavailable: t.Optional[bool] = None,
+        indices_boost: t.Optional[t.Sequence[t.Mapping[str, float]]] = None,
+        lenient: t.Optional[bool] = None,
+        max_concurrent_shard_requests: t.Optional[int] = None,
+        min_score: t.Optional[float] = None,
+        pit: t.Optional[t.Mapping[str, t.Any]] = None,
+        post_filter: t.Optional[t.Mapping[str, t.Any]] = None,
+        pre_filter_shard_size: t.Optional[int] = None,
+        preference: t.Optional[str] = None,
+        pretty: t.Optional[bool] = None,
+        profile: t.Optional[bool] = None,
+        q: t.Optional[str] = None,
+        query: t.Optional[t.Mapping[str, t.Any]] = None,
+        request_cache: t.Optional[bool] = None,
+        rescore: t.Optional[
+            t.Union[t.Mapping[str, t.Any], t.Sequence[t.Mapping[str, t.Any]]]
+        ] = None,
+        rest_total_hits_as_int: t.Optional[bool] = None,
+        routing: t.Optional[str] = None,
+        runtime_mappings: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        script_fields: t.Optional[t.Mapping[str, t.Mapping[str, t.Any]]] = None,
+        scroll: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None,
+        search_after: t.Optional[
+            t.Sequence[t.Union[None, bool, float, int, str, t.Any]]
+        ] = None,
+        search_type: t.Optional[
+            t.Union[str, t.Literal["dfs_query_then_fetch", "query_then_fetch"]]
+        ] = None,
+        seq_no_primary_term: t.Optional[bool] = None,
+        size: t.Optional[int] = None,
+        slice: t.Optional[t.Mapping[str, t.Any]] = None,
+        sort: t.Optional[
+            t.Union[
+                t.Sequence[t.Union[str, t.Mapping[str, t.Any]]],
+                t.Union[str, t.Mapping[str, t.Any]],
+            ]
+        ] = None,
+        source: t.Optional[t.Union[bool, t.Mapping[str, t.Any]]] = None,
+        source_excludes: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        source_includes: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        stats: t.Optional[t.Sequence[str]] = None,
+        stored_fields: t.Optional[t.Union[str, t.Sequence[str]]] = None,
+        suggest: t.Optional[t.Mapping[str, t.Any]] = None,
+        suggest_field: t.Optional[str] = None,
+        suggest_mode: t.Optional[
+            t.Union[str, t.Literal["always", "missing", "popular"]]
+        ] = None,
+        suggest_size: t.Optional[int] = None,
+        suggest_text: t.Optional[str] = None,
+        terminate_after: t.Optional[int] = None,
+        timeout: t.Optional[str] = None,
+        track_scores: t.Optional[bool] = None,
+        track_total_hits: t.Optional[t.Union[bool, int]] = None,
+        typed_keys: t.Optional[bool] = None,
+        version: t.Optional[bool] = None,
+        wait_for_checkpoints: t.Optional[t.Sequence[int]] = None,
+        body: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> ObjectApiResponse[t.Any]:
         """
-        Search API where the search will only be executed after specified checkpoints
-        are available due to a refresh. This API is designed for internal use by the
-        fleet server project.
+        .. raw:: html
+
+          <p>Run a Fleet search.
+          The purpose of the Fleet search API is to provide an API where the search will be run only
+          after the provided checkpoint has been processed and is visible for searches inside of Elasticsearch.</p>
+
 
         :param index: A single target to search. If the target is an index alias, it
             must resolve to a single index.
@@ -312,6 +413,7 @@ class FleetClient(NamespacedClient):
         :param expand_wildcards:
         :param explain: If true, returns detailed information about score computation
             as part of a hit.
+        :param ext: Configuration of search extensions defined by Elasticsearch plugins.
         :param fields: Array of wildcard (*) patterns. The request returns values for
             field names matching these patterns in the hits.fields property of the response.
         :param from_: Starting document offset. By default, you cannot page through more
@@ -323,7 +425,6 @@ class FleetClient(NamespacedClient):
         :param indices_boost: Boosts the _score of documents from specified indices.
         :param lenient:
         :param max_concurrent_shard_requests:
-        :param min_compatible_shard_node:
         :param min_score: Minimum _score for matching documents. Documents with a lower
             _score are not included in the search results.
         :param pit: Limits the search to a point in time (PIT). If you provide a PIT,
@@ -391,13 +492,21 @@ class FleetClient(NamespacedClient):
         """
         if index in SKIP_IN_PATH:
             raise ValueError("Empty value passed for parameter 'index'")
-        __path = f"/{_quote(index)}/_fleet/_fleet_search"
-        __body: Dict[str, Any] = {}
-        __query: Dict[str, Any] = {}
-        if aggregations is not None:
-            __body["aggregations"] = aggregations
-        if aggs is not None:
-            __body["aggs"] = aggs
+        __path_parts: t.Dict[str, str] = {"index": _quote(index)}
+        __path = f'/{__path_parts["index"]}/_fleet/_fleet_search'
+        __query: t.Dict[str, t.Any] = {}
+        __body: t.Dict[str, t.Any] = body if body is not None else {}
+        # The 'sort' parameter with a colon can't be encoded to the body.
+        if sort is not None and (
+            (isinstance(sort, str) and ":" in sort)
+            or (
+                isinstance(sort, (list, tuple))
+                and all(isinstance(_x, str) for _x in sort)
+                and any(":" in _x for _x in sort)
+            )
+        ):
+            __query["sort"] = sort
+            sort = None
         if allow_no_indices is not None:
             __query["allow_no_indices"] = allow_no_indices
         if allow_partial_search_results is not None:
@@ -410,98 +519,48 @@ class FleetClient(NamespacedClient):
             __query["batched_reduce_size"] = batched_reduce_size
         if ccs_minimize_roundtrips is not None:
             __query["ccs_minimize_roundtrips"] = ccs_minimize_roundtrips
-        if collapse is not None:
-            __body["collapse"] = collapse
         if default_operator is not None:
             __query["default_operator"] = default_operator
         if df is not None:
             __query["df"] = df
-        if docvalue_fields is not None:
-            __body["docvalue_fields"] = docvalue_fields
         if error_trace is not None:
             __query["error_trace"] = error_trace
         if expand_wildcards is not None:
             __query["expand_wildcards"] = expand_wildcards
-        if explain is not None:
-            __body["explain"] = explain
-        if fields is not None:
-            __body["fields"] = fields
         if filter_path is not None:
             __query["filter_path"] = filter_path
-        if from_ is not None:
-            __body["from"] = from_
-        if highlight is not None:
-            __body["highlight"] = highlight
         if human is not None:
             __query["human"] = human
         if ignore_throttled is not None:
             __query["ignore_throttled"] = ignore_throttled
         if ignore_unavailable is not None:
             __query["ignore_unavailable"] = ignore_unavailable
-        if indices_boost is not None:
-            __body["indices_boost"] = indices_boost
         if lenient is not None:
             __query["lenient"] = lenient
         if max_concurrent_shard_requests is not None:
             __query["max_concurrent_shard_requests"] = max_concurrent_shard_requests
-        if min_compatible_shard_node is not None:
-            __query["min_compatible_shard_node"] = min_compatible_shard_node
-        if min_score is not None:
-            __body["min_score"] = min_score
-        if pit is not None:
-            __body["pit"] = pit
-        if post_filter is not None:
-            __body["post_filter"] = post_filter
         if pre_filter_shard_size is not None:
             __query["pre_filter_shard_size"] = pre_filter_shard_size
         if preference is not None:
             __query["preference"] = preference
         if pretty is not None:
             __query["pretty"] = pretty
-        if profile is not None:
-            __body["profile"] = profile
         if q is not None:
             __query["q"] = q
-        if query is not None:
-            __body["query"] = query
         if request_cache is not None:
             __query["request_cache"] = request_cache
-        if rescore is not None:
-            __body["rescore"] = rescore
         if rest_total_hits_as_int is not None:
             __query["rest_total_hits_as_int"] = rest_total_hits_as_int
         if routing is not None:
             __query["routing"] = routing
-        if runtime_mappings is not None:
-            __body["runtime_mappings"] = runtime_mappings
-        if script_fields is not None:
-            __body["script_fields"] = script_fields
         if scroll is not None:
             __query["scroll"] = scroll
-        if search_after is not None:
-            __body["search_after"] = search_after
         if search_type is not None:
             __query["search_type"] = search_type
-        if seq_no_primary_term is not None:
-            __body["seq_no_primary_term"] = seq_no_primary_term
-        if size is not None:
-            __body["size"] = size
-        if slice is not None:
-            __body["slice"] = slice
-        if sort is not None:
-            __body["sort"] = sort
-        if source is not None:
-            __body["_source"] = source
         if source_excludes is not None:
             __query["_source_excludes"] = source_excludes
         if source_includes is not None:
             __query["_source_includes"] = source_includes
-        if stats is not None:
-            __body["stats"] = stats
-        if stored_fields is not None:
-            __body["stored_fields"] = stored_fields
-        if suggest is not None:
-            __body["suggest"] = suggest
         if suggest_field is not None:
             __query["suggest_field"] = suggest_field
         if suggest_mode is not None:
@@ -510,25 +569,86 @@ class FleetClient(NamespacedClient):
             __query["suggest_size"] = suggest_size
         if suggest_text is not None:
             __query["suggest_text"] = suggest_text
-        if terminate_after is not None:
-            __body["terminate_after"] = terminate_after
-        if timeout is not None:
-            __body["timeout"] = timeout
-        if track_scores is not None:
-            __body["track_scores"] = track_scores
-        if track_total_hits is not None:
-            __body["track_total_hits"] = track_total_hits
         if typed_keys is not None:
             __query["typed_keys"] = typed_keys
-        if version is not None:
-            __body["version"] = version
         if wait_for_checkpoints is not None:
             __query["wait_for_checkpoints"] = wait_for_checkpoints
+        if not __body:
+            if aggregations is not None:
+                __body["aggregations"] = aggregations
+            if aggs is not None:
+                __body["aggs"] = aggs
+            if collapse is not None:
+                __body["collapse"] = collapse
+            if docvalue_fields is not None:
+                __body["docvalue_fields"] = docvalue_fields
+            if explain is not None:
+                __body["explain"] = explain
+            if ext is not None:
+                __body["ext"] = ext
+            if fields is not None:
+                __body["fields"] = fields
+            if from_ is not None:
+                __body["from"] = from_
+            if highlight is not None:
+                __body["highlight"] = highlight
+            if indices_boost is not None:
+                __body["indices_boost"] = indices_boost
+            if min_score is not None:
+                __body["min_score"] = min_score
+            if pit is not None:
+                __body["pit"] = pit
+            if post_filter is not None:
+                __body["post_filter"] = post_filter
+            if profile is not None:
+                __body["profile"] = profile
+            if query is not None:
+                __body["query"] = query
+            if rescore is not None:
+                __body["rescore"] = rescore
+            if runtime_mappings is not None:
+                __body["runtime_mappings"] = runtime_mappings
+            if script_fields is not None:
+                __body["script_fields"] = script_fields
+            if search_after is not None:
+                __body["search_after"] = search_after
+            if seq_no_primary_term is not None:
+                __body["seq_no_primary_term"] = seq_no_primary_term
+            if size is not None:
+                __body["size"] = size
+            if slice is not None:
+                __body["slice"] = slice
+            if sort is not None:
+                __body["sort"] = sort
+            if source is not None:
+                __body["_source"] = source
+            if stats is not None:
+                __body["stats"] = stats
+            if stored_fields is not None:
+                __body["stored_fields"] = stored_fields
+            if suggest is not None:
+                __body["suggest"] = suggest
+            if terminate_after is not None:
+                __body["terminate_after"] = terminate_after
+            if timeout is not None:
+                __body["timeout"] = timeout
+            if track_scores is not None:
+                __body["track_scores"] = track_scores
+            if track_total_hits is not None:
+                __body["track_total_hits"] = track_total_hits
+            if version is not None:
+                __body["version"] = version
         if not __body:
             __body = None  # type: ignore[assignment]
         __headers = {"accept": "application/json"}
         if __body is not None:
             __headers["content-type"] = "application/json"
         return await self.perform_request(  # type: ignore[return-value]
-            "POST", __path, params=__query, headers=__headers, body=__body
+            "POST",
+            __path,
+            params=__query,
+            headers=__headers,
+            body=__body,
+            endpoint_id="fleet.search",
+            path_parts=__path_parts,
         )

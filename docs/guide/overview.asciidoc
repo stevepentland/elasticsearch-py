@@ -10,12 +10,25 @@ on https://elasticsearch-py.readthedocs.io[Read the Docs].
 [discrete]
 === Compatibility
 
-Language clients are forward compatible; meaning that clients support communicating
-with greater or equal minor versions of Elasticsearch. Elasticsearch language clients
-are only backwards compatible with default distributions and without guarantees made.
+Language clients are forward compatible; meaning that the clients support
+communicating with greater or equal minor versions of {es} without breaking. It
+does not mean that the clients automatically support new features of newer
+{es} versions; it is only possible after a release of a new client version. For
+example, a 8.12 client version won't automatically support the new features of
+the 8.13 version of {es}, the 8.13 client version is required for that. {es}
+language clients are only backwards compatible with default distributions and
+without guarantees made.
+
+|===
+| Elasticsearch version | elasticsearch-py branch   | Supported
+
+| main                  | main                      | 
+| 8.x                   | 8.x                       | 8.x
+| 7.x                   | 7.x                       | 7.17
+|===
 
 If you have a need to have multiple versions installed at the same time older
-versions are also released as `elasticsearch2` and `elasticsearch5`.
+versions are also released as `elasticsearch7` and `elasticsearch8`.
 
 
 [discrete]
@@ -29,14 +42,14 @@ Simple use-case:
 >>> from elasticsearch import Elasticsearch
 
 # Connect to 'http://localhost:9200'
->>> es = Elasticsearch("http://localhost:9200")
+>>> client = Elasticsearch("http://localhost:9200")
 
 # Datetimes will be serialized:
->>> es.index(index="my-index-000001", id=42, document={"any": "data", "timestamp": datetime.now()})
+>>> client.index(index="my-index-000001", id=42, document={"any": "data", "timestamp": datetime.now()})
 {'_id': '42', '_index': 'my-index-000001', '_type': 'test-type', '_version': 1, 'ok': True}
 
 # ...but not deserialized
->>> es.get(index="my-index-000001", id=42)['_source']
+>>> client.get(index="my-index-000001", id=42)['_source']
 {'any': 'data', 'timestamp': '2013-05-12T19:45:31.804229'}
 ------------------------------------
 
@@ -69,20 +82,8 @@ some of the more engaging tasks like bulk indexing and reindexing.
 
 
 [discrete]
-=== Elasticsearch DSL
+=== Elasticsearch Python DSL
 
-For a more high level client library with more limited scope, have a look at
-https://elasticsearch-dsl.readthedocs.org/[elasticsearch-dsl] - a more Pythonic library
-sitting on top of `elasticsearch-py`.
-
-It provides a more convenient and idiomatic way to write and manipulate
-https://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html[queries]. It
-stays close to the Elasticsearch JSON DSL, mirroring its terminology and
-structure while exposing the whole range of the DSL from Python either directly
-using defined classes or a queryset-like expressions.
-
-It also provides an optional
-https://elasticsearch-dsl.readthedocs.org/en/latest/persistence.html#doctype[persistence
-layer] for working with documents as Python objects in an ORM-like fashion:
-defining mappings, retrieving and saving documents, wrapping the document data
-in user-defined classes.
+For a higher level access with more limited scope, have a look at the DSL module,
+which provides a more convenient and idiomatic way to write and manipulate
+queries.
